@@ -55,8 +55,9 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     const response = await fetch(url.toString(), config);
     
     if (response.status === 401) {
-      localStorage.removeItem('taskverify_token');
-      // Optional: window.location.href = '/login';
+      // Lazy import to avoid circular dependency
+      const { useAuth } = await import('../hooks/useAuth');
+      useAuth.getState().logout();
       throw new Error('Unauthorized');
     }
 
