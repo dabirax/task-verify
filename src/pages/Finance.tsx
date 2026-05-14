@@ -81,9 +81,9 @@ export default function Finance() {
 
   // Fallback data
   const creditScore = creditProfile?.credit_score ?? user?.trust_score ?? 724
-  const loanEligible = creditProfile?.loan_eligibility ?? true
-  const recommendedLoan = creditProfile?.recommended_loan ?? 150000
-  const riskLevel = (creditProfile?.insurance_risk_level ?? 'low').toLowerCase()
+  const loanEligible = creditProfile?.loan_eligible ?? true
+  const recommendedLoan = 150000
+  const riskLevel = 'low'
   const risk = riskColors[riskLevel] ?? riskColors.low
   const walletBalance = workerProfile?.current_month_earnings ?? 32000
   const totalEarnings = workerProfile?.total_earnings ?? 180000
@@ -288,7 +288,7 @@ export default function Finance() {
       </div>
     </div>
 
-    <LoanModal isOpen={showLoan} onClose={() => setShowLoan(false)} maxAmount={creditProfile?.recommended_loan ?? 150000} />
+    <LoanModal isOpen={showLoan} onClose={() => setShowLoan(false)} maxAmount={recommendedLoan} />
     <InsuranceModal isOpen={showInsurance} onClose={() => setShowInsurance(false)} />
     <KYCModal isOpen={showKYC} onClose={() => setShowKYC(false)} />
     </>

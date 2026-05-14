@@ -48,7 +48,7 @@ export default function Admin() {
   const { addToast } = useApp()
   const { data: dashboardStats, isLoading: loadingStats } = useAdminDashboard()
   const { data: adminTasks, isLoading: loadingTasks } = useAdminTasks({ limit: 10 })
-  const { data: adminWorkers, isLoading: loadingWorkers } = useAdminWorkers({ limit: 10 })
+  const { data: adminWorkers, isLoading: loadingWorkers } = useAdminWorkers()
   const { data: kycSubmissions, isLoading: loadingKYC } = useAdminKYCSubmissions('pending')
   const { data: aiLogs, isLoading: loadingLogs } = useAdminAILogs(10)
   
