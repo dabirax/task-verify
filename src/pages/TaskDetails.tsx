@@ -1,0 +1,205 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+import { useApp } from '../context/AppContext';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/formatters';
+import { MapPin, Calendar, Clock, Lock, CheckCircle2, Zap, ArrowLeft, Loader2, BrainCircuit } from 'lucide-react';
+import SubmitProofModal from '../components/SubmitProofModal';
+import { useState } from 'react';
+
+export default function TaskDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToast } = useApp();
+  const queryClient = useQueryClient();
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  const { data: task, isLoading: taskLoading } = useQuery({
+    queryKey: ['tasks', Number(id)],
+    queryFn: () => api.getTask(Number(id)),
+    enabled: !!id,
+  });
+
+  const { data: workers = [] } = useQuery({
+    queryKey: ['workers'],
+    queryFn: () => api.getWorkers(),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: (workerId: number) => api.assignWorker(Number(id), workerId),
+    onSuccess: () => {
+      addToast('Worker assigned successfully! Escrow created.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['tasks', Number(id)] });
+    },
+    onError: (error: any) => {
+      addToast(error.message || 'Failed to assign worker', 'error');
+    },
+  });
+
+  if (taskLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[50vh] gap-4">
+        <h2 className="text-2xl font-black text-navy-900">Task Not Found</h2>
+        <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+      </div>
+    );
+  }
+
+  const status = statusConfig[task.status] ?? { label: task.status, bg: 'bg-slate-100', text: 'text-slate-600' };
+  const isOwner = Number(user?.id) === task.buyer_user_id;
+  const isAssignedToMe = task.assigned_worker_id === user?.worker_id && task.status === 'assigned';
+  const isOpen = task.status === 'posted' || task.status === 'open';
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page-container pt-32 pb-12 max-w-4xl">
+      <Button 
+        variant="outline" 
+        onClick={() => navigate(-1)} 
+        className="mb-8 rounded-xl font-bold border-slate-200 text-slate-600"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" /> Back
+      </Button>
+
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-8 md:p-12 mb-8">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+          <div>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <Badge className={`${status.bg} ${status.text} border-none font-black text-xs uppercase tracking-widest px-3 py-1.5`}>
+                {status.label}
+              </Badge>
+              {task.squad_va_account_number && (
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 font-black text-xs uppercase tracking-widest px-3 py-1.5 gap-1.5">
+                  <Lock className="w-3.5 h-3.5" /> Escrow Secure
+                </Badge>
+              )}
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-navy-900 mb-4">{task.title}</h1>
+            <div className="flex items-center gap-4 text-slate-500 font-bold text-sm">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4" /> {task.task_location}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" /> Due {formatDate(task.due_date)}
+              </div>
+            </div>
+          </div>
+          <div className="text-left md:text-right">
+            <div className="text-4xl font-black text-navy-900 mb-2">{formatNaira(task.amount_naira)}</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Fixed Budget</div>
+          </div>
+        </div>
+
+        <div className="prose prose-slate max-w-none mb-10">
+          <h3 className="text-lg font-black text-navy-900 mb-3">Description</h3>
+          <p className="text-slate-600 font-medium leading-relaxed">{task.description}</p>
+        </div>
+
+        <div className="mb-10">
+          <h3 className="text-lg font-black text-navy-900 mb-3">Required Skills</h3>
+          <div className="flex flex-wrap gap-2">
+            {task.required_skills?.map((skill) => (
+              <Badge key={skill} variant="outline" className={`font-black uppercase tracking-widest border-none px-3 py-1.5 ${getSkillColor(skill)}`}>
+                {skill}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {task.deliverable_spec && typeof task.deliverable_spec === 'object' && (
+          <div className="bg-slate-50 rounded-2xl p-6 mb-10 border border-slate-100">
+            <h3 className="text-sm font-black text-navy-900 uppercase tracking-widest mb-4">Deliverable Requirements</h3>
+            <ul className="space-y-3">
+              {(task.deliverable_spec as any).photos_required && (
+                <li className="flex items-center gap-2 text-sm font-bold text-slate-600">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> 
+                  Photos Required (Min: {(task.deliverable_spec as any).minimum_photos})
+                </li>
+              )}
+              {(task.deliverable_spec as any).notes && (
+                <li className="flex items-start gap-2 text-sm font-bold text-slate-600">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> 
+                  <span>{(task.deliverable_spec as any).notes}</span>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end border-t border-slate-100 pt-8 mt-8">
+          {isOpen && !isOwner && user?.role === 'worker' && (
+            <Button 
+              className="h-14 px-8 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-navy-100"
+            >
+              Apply for Job <Zap className="ml-2 w-5 h-5 text-emerald-400 fill-emerald-400" />
+            </Button>
+          )}
+
+          {isAssignedToMe && (
+            <Button 
+              onClick={() => setShowSubmitModal(true)}
+              className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-emerald-100"
+            >
+              Submit Proof <CheckCircle2 className="ml-2 w-5 h-5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {isOwner && isOpen && task.shortlisted_workers && task.shortlisted_workers.length > 0 && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-8 md:p-12">
+          <div className="flex items-center gap-3 mb-8">
+            <BrainCircuit className="w-6 h-6 text-blue-600" />
+            <h2 className="text-2xl font-black text-navy-900">AI Shortlisted Workers</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {task.shortlisted_workers.map((workerId: number) => {
+              const workerInfo = workers.find(w => w.id === workerId);
+              return (
+                <div key={workerId} className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col justify-between">
+                  <div className="mb-4">
+                    <div className="font-black text-lg text-navy-900">{workerInfo?.name || `Worker #${workerId}`}</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{workerInfo?.primary_location || 'Unknown Location'}</div>
+                  </div>
+                  <Button 
+                    onClick={() => assignMutation.mutate(workerId)}
+                    disabled={assignMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                  >
+                    {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Assign & Create Escrow
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {isOwner && isOpen && (!task.shortlisted_workers || task.shortlisted_workers.length === 0) && (
+        <div className="bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm p-8 text-center">
+           <h3 className="text-lg font-black text-navy-900 mb-2">Awaiting AI Matching</h3>
+           <p className="text-slate-500 font-medium max-w-md mx-auto">The AI is currently analyzing worker profiles to find the best matches for this task. Shortlisted workers will appear here.</p>
+        </div>
+      )}
+
+      <SubmitProofModal 
+        taskId={Number(id)} 
+        isOpen={showSubmitModal} 
+        onClose={() => setShowSubmitModal(false)} 
+      />
+    </motion.div>
+  );
+}

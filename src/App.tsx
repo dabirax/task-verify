@@ -10,7 +10,10 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Services from './pages/Services'
+import TaskDetails from './pages/TaskDetails'
 import Workers from './pages/Workers'
+import WorkerDetails from './pages/WorkerDetails'
+import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useAuth } from './hooks/useAuth'
@@ -53,10 +56,34 @@ export default function App() {
               }
             />
             <Route
+              path="/services/:id"
+              element={
+                <ProtectedRoute>
+                  <TaskDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/workers"
               element={
                 <ProtectedRoute>
                   <Workers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workers/:id"
+              element={
+                <ProtectedRoute>
+                  <WorkerDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               }
             />

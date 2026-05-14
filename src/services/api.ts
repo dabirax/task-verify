@@ -146,6 +146,13 @@ export const api = {
   getWorkerFinancialProfile: (id: number) =>
     apiClient<FinancialProfile>(`/api/v1/workers/${id}/financial-profile`),
 
+  // ─── Worker Profile (Authenticated) ──────────────────────────────────────────
+  getWorkerProfileMe: () =>
+    apiClient<Worker>('/api/v1/worker-profile/me'),
+
+  updateWorkerProfileMe: (data: Partial<Worker>) =>
+    apiClient<Worker>('/api/v1/worker-profile/me', { method: 'PUT', body: data }),
+
   // ─── Wallet ──────────────────────────────────────────────────────────────────
   getWallet: () =>
     apiClient<Wallet>('/api/v1/wallet'),

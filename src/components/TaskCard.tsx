@@ -14,6 +14,7 @@ import {
 import type { Task } from '../types';
 import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/formatters';
 import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
@@ -31,6 +32,7 @@ interface TaskCardProps {
 export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
   const { addToast } = useApp();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const status = statusConfig[task.status] ?? { label: task.status, bg: 'bg-slate-100', text: 'text-slate-600' };
@@ -61,7 +63,10 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Card className="h-full border-slate-100 shadow-xl shadow-navy-100/30 rounded-[2rem] overflow-hidden flex flex-col group transition-all duration-500 hover:shadow-2xl hover:shadow-navy-100/50">
+      <Card 
+        onClick={() => navigate(`/services/${task.id}`)}
+        className="h-full border-slate-100 shadow-xl shadow-navy-100/30 rounded-[2rem] overflow-hidden flex flex-col group transition-all duration-500 hover:shadow-2xl hover:shadow-navy-100/50 cursor-pointer"
+      >
         <CardHeader className="p-6 pb-4 space-y-3">
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-1.5 flex-1">
@@ -136,14 +141,14 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
             
             {isOpen ? (
               <Button 
-                onClick={handleApply}
+                onClick={(e) => { e.stopPropagation(); handleApply(); }}
                 className="h-12 px-6 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-navy-100"
               >
                 Smart Apply <Zap className="ml-2 w-4 h-4 text-emerald-400 fill-emerald-400" />
               </Button>
             ) : isAssignedToMe ? (
               <Button 
-                onClick={() => setShowSubmitModal(true)}
+                onClick={(e) => { e.stopPropagation(); setShowSubmitModal(true); }}
                 className="h-12 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-emerald-100"
               >
                 Submit Proof <CheckCircle2 className="ml-2 w-4 h-4" />
@@ -151,6 +156,7 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
             ) : (
               <Button 
                 disabled
+                onClick={(e) => e.stopPropagation()}
                 className="h-12 px-6 rounded-2xl bg-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest transition-all duration-300"
               >
                 {status.label}

@@ -116,7 +116,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white shadow-glow-emerald group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-glow-emerald group-hover:scale-105 transition-transform">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
@@ -230,7 +230,7 @@ export default function Navbar() {
                       <p className="text-xs font-bold text-navy-900 truncate">{user?.email}</p>
                     </div>
                     <DropdownMenuSeparator className="bg-slate-50" />
-                    <DropdownMenuItem className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
+                    <DropdownMenuItem onClick={() => navigate('/profile')} className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
                       <UserIcon className="w-4 h-4 mr-3 text-slate-400" /> My Profile
                     </DropdownMenuItem>
                     <DropdownMenuItem className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">

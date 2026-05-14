@@ -90,7 +90,6 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between ml-1">
                   <Label htmlFor="password" className="font-bold text-navy-900">Password</Label>
-                  <Link to="#" className="text-xs font-bold text-emerald-600 hover:text-emerald-500">Forgot Password?</Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -101,6 +100,9 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Link to="#" className="text-xs font-bold text-emerald-600 hover:text-emerald-500">Forgot Password?</Link>
                 </div>
               </div>
             </CardContent>

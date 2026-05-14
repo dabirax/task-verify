@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Star, 
@@ -26,6 +26,7 @@ interface WorkerCardProps {
 }
 
 export default function WorkerCard({ worker, matchScore, matchReasons }: WorkerCardProps) {
+  const navigate = useNavigate();
   const { label: trustLabel, color: trustColor } = trustScoreLabel(worker.trust_score);
   const successRate = worker.tasks_completed > 0
     ? Math.round((worker.tasks_successful / worker.tasks_completed) * 100)
@@ -47,7 +48,10 @@ export default function WorkerCard({ worker, matchScore, matchReasons }: WorkerC
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Card className="h-full border-slate-100 shadow-xl shadow-navy-100/30 rounded-[2rem] overflow-hidden flex flex-col group transition-all duration-500 hover:shadow-2xl hover:shadow-navy-100/50">
+      <Card 
+        onClick={() => navigate(`/workers/${worker.id}`)}
+        className="h-full border-slate-100 shadow-xl shadow-navy-100/30 rounded-[2rem] overflow-hidden flex flex-col group transition-all duration-500 hover:shadow-2xl hover:shadow-navy-100/50 cursor-pointer"
+      >
         <CardHeader className="p-6 pb-4 space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -153,7 +157,7 @@ export default function WorkerCard({ worker, matchScore, matchReasons }: WorkerC
         </CardContent>
 
         <CardFooter className="p-6 pt-0">
-          <Link to={`/workers`} className="w-full">
+          <Link to={`/workers/${worker.id}`} className="w-full" onClick={(e) => e.stopPropagation()}>
             <Button variant="outline" className="w-full h-11 rounded-2xl border-slate-200 font-black text-xs uppercase tracking-widest hover:bg-navy-900 hover:text-white hover:border-navy-900 group transition-all duration-300 shadow-sm">
               View Profile <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Button>

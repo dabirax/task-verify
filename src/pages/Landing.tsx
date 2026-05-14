@@ -83,12 +83,7 @@ export default function Landing() {
 
         <div className="page-container relative z-10 grid lg:grid-cols-2 gap-12 items-center py-20">
           <div>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Badge variant="outline" className="px-4 py-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 font-bold mb-6 gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Africa's National Economic Operating System
-              </Badge>
-            </motion.div>
+
 
             <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="text-5xl md:text-6xl lg:text-7xl font-black text-navy-900 leading-[1.05] tracking-tight mb-6">
@@ -164,9 +159,9 @@ export default function Landing() {
       </section>
 
       {/* ECOSYSTEM VISUALIZATION */}
-      <section id="ecosystem" className="py-32 bg-slate-50 overflow-hidden">
+      <section id="ecosystem" className="py-16 md:py-24 bg-slate-50 overflow-hidden">
         <div className="page-container">
-          <div className="text-center mb-20">
+          <div className="text-center mb-12">
             <Badge className="bg-emerald-500 text-white rounded-full px-6 py-1.5 mb-6">The Operating System</Badge>
             <h2 className="text-4xl md:text-5xl font-black text-navy-900 mb-6 leading-tight">One Network.<br /><span className="text-emerald-500">Many Possibilities.</span></h2>
             <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">Every actor in the informal economy — connected, verified, and empowered through a single intelligent layer.</p>
@@ -204,9 +199,9 @@ export default function Landing() {
       </section>
 
       {/* SERVICES (TASKS) */}
-      <section id="services" className="py-32 bg-white">
+      <section id="services" className="py-16 md:py-24 bg-white">
         <div className="page-container">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
             <div className="max-w-2xl">
               <Badge className="bg-blue-600 text-white rounded-full px-6 py-1.5 mb-6">Service Marketplace</Badge>
               <h2 className="text-4xl md:text-5xl font-black text-navy-900 mb-6 leading-tight">Verified opportunities<br />for every skilled artisan</h2>
@@ -225,9 +220,9 @@ export default function Landing() {
       </section>
 
       {/* WORKERS */}
-      <section id="workers" className="py-32 bg-slate-50">
+      <section id="workers" className="py-16 md:py-24 bg-slate-50">
         <div className="page-container">
-          <div className="text-center mb-20">
+          <div className="text-center mb-12">
             <Badge className="bg-violet-600 text-white rounded-full px-6 py-1.5 mb-6">Verified Talent</Badge>
             <h2 className="text-4xl md:text-5xl font-black text-navy-900 mb-6">Africa's most reliable workforce</h2>
             <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">Every worker is vetted by AI, verified by documents, and rated by their community.</p>
@@ -241,12 +236,12 @@ export default function Landing() {
       </section>
 
       {/* ANALYTICS SHOWCASE (For landing) */}
-      <section id="analytics" className="py-32 bg-navy-950 text-white relative overflow-hidden">
+      <section id="analytics" className="py-16 md:py-24 bg-navy-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px]" />
         </div>
         <div className="page-container relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 md:gap-20 items-center">
             <div>
               <Badge variant="outline" className="text-emerald-400 border-emerald-400/30 px-6 py-1.5 mb-6 uppercase tracking-widest font-black">AI & Sector Analytics</Badge>
               <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight">Insight into the<br /><span className="text-emerald-400">Invisible Economy</span></h2>
@@ -304,7 +299,7 @@ export default function Landing() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-32 bg-white">
+      <section className="py-16 md:py-24 bg-white">
         <div className="page-container text-center">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-6xl font-black text-navy-900 mb-8 leading-tight tracking-tight">

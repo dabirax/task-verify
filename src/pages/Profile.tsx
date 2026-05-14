@@ -1,0 +1,196 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+import { useApp } from '../context/AppContext';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { getInitials, trustScoreLabel } from '../utils/formatters';
+import { ShieldCheck, User as UserIcon, Mail, MapPin, Edit2, Loader2, Save, X } from 'lucide-react';
+
+export default function Profile() {
+  const { user } = useAuth();
+  const { addToast } = useApp();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    bio: '',
+    primary_location: '',
+  });
+
+  const { data: workerProfile, isLoading } = useQuery({
+    queryKey: ['workerProfileMe'],
+    queryFn: () => api.getWorkerProfileMe(),
+    enabled: user?.role === 'worker',
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => api.updateWorkerProfileMe(data),
+    onSuccess: () => {
+      addToast('Profile updated successfully!', 'success');
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['workerProfileMe'] });
+    },
+    onError: (err: any) => {
+      addToast(err.message || 'Failed to update profile', 'error');
+    },
+  });
+
+  const handleEditClick = () => {
+    if (workerProfile) {
+      setEditForm({
+        name: workerProfile.name || '',
+        bio: workerProfile.bio || '',
+        primary_location: workerProfile.primary_location || '',
+      });
+    }
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    updateMutation.mutate(editForm);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  const avatarBg = 'bg-blue-50 text-blue-700';
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page-container pt-32 pb-12 max-w-3xl">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-black text-navy-900">My Profile</h1>
+        {user?.role === 'worker' && !isEditing && (
+          <Button onClick={handleEditClick} variant="outline" className="rounded-xl">
+            <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
+          </Button>
+        )}
+      </div>
+
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden mb-8">
+        <div className="bg-slate-50 border-b border-slate-100 p-8 flex flex-col md:flex-row items-center gap-6">
+          <Avatar className="w-24 h-24 border-4 border-white shadow-lg rounded-3xl">
+             <AvatarImage src={workerProfile?.avatar_url || ''} className="object-cover" />
+             <AvatarFallback className={`${avatarBg} rounded-3xl font-black text-3xl`}>
+               {getInitials(workerProfile?.name || user?.full_name || user?.email || 'U')}
+             </AvatarFallback>
+          </Avatar>
+          <div className="text-center md:text-left flex-1">
+             {isEditing ? (
+               <Input 
+                 value={editForm.name}
+                 onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                 className="mb-2 max-w-sm text-lg font-bold"
+                 placeholder="Your full name"
+               />
+             ) : (
+               <h2 className="text-2xl font-black text-navy-900 mb-1">{workerProfile?.name || user?.full_name || 'User'}</h2>
+             )}
+             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-slate-500 font-bold">
+               <div className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {user?.email}</div>
+               <Badge variant="secondary" className="uppercase tracking-widest text-[10px]">{user?.role}</Badge>
+             </div>
+          </div>
+        </div>
+
+        {user?.role === 'worker' && workerProfile && (
+          <div className="p-8 space-y-8">
+            <div>
+              <h3 className="text-sm font-black text-navy-900 uppercase tracking-widest mb-3">About</h3>
+              {isEditing ? (
+                <textarea 
+                  className="w-full rounded-xl border-slate-200 p-3 text-sm font-medium focus:border-emerald-500 focus:ring-emerald-500 resize-none h-24"
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Tell us about yourself..."
+                />
+              ) : (
+                <p className="text-slate-600 font-medium bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  {workerProfile.bio || "No bio provided. Edit your profile to add one."}
+                </p>
+              )}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-sm font-black text-navy-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" /> Location
+                </h3>
+                {isEditing ? (
+                  <Input 
+                    value={editForm.primary_location}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, primary_location: e.target.value }))}
+                    placeholder="e.g. Lagos, Nigeria"
+                  />
+                ) : (
+                  <div className="text-slate-600 font-bold">{workerProfile.primary_location || "Not specified"}</div>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black text-navy-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <UserIcon className="w-4 h-4 text-slate-400" /> Account Status
+                </h3>
+                <div className="flex items-center gap-2">
+                  {workerProfile.is_active ? (
+                     <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100">Active</Badge>
+                  ) : (
+                     <Badge variant="outline" className="text-slate-400">Inactive</Badge>
+                  )}
+                  {workerProfile.trust_score >= 500 && (
+                     <Badge className="bg-blue-50 text-blue-700 border-blue-100 flex items-center gap-1">
+                       <ShieldCheck className="w-3 h-3" /> KYC Verified
+                     </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {!isEditing && (
+              <div className="bg-navy-950 text-white rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 opacity-10 w-32 h-32 transform translate-x-8 -translate-y-8">
+                  <ShieldCheck className="w-full h-full" />
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Trust Identity</h3>
+                <div className="flex items-end gap-3">
+                  <div className="text-4xl font-black">{workerProfile.trust_score}</div>
+                  <div className="text-sm font-bold text-slate-300 pb-1">{trustScoreLabel(workerProfile.trust_score).label} Tier</div>
+                </div>
+              </div>
+            )}
+
+            {isEditing && (
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                 <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending}>
+                   <X className="w-4 h-4 mr-2" /> Cancel
+                 </Button>
+                 <Button onClick={handleSave} disabled={updateMutation.isPending} className="bg-emerald-600 hover:bg-emerald-500">
+                   {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                   Save Changes
+                 </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {user?.role === 'buyer' && (
+          <div className="p-8">
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
+               <h3 className="text-lg font-black text-navy-900 mb-2">Buyer Account</h3>
+               <p className="text-slate-500 font-medium">You are logged in as a Buyer. Use the Finance page to manage your Squad Escrow transactions and fund your wallet.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
