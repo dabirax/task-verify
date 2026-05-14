@@ -1,32 +1,84 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ToastContainer from './components/Toast'
 import Landing from './pages/Landing'
-import Ecosystem from './pages/Ecosystem'
-import Workers from './pages/Workers'
-import Tasks from './pages/Tasks'
 import Finance from './pages/Finance'
-import Analytics from './pages/Analytics'
 import Admin from './pages/Admin'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
+import Services from './pages/Services'
+import Workers from './pages/Workers'
+import Notifications from './pages/Notifications'
+import ProtectedRoute from './components/ProtectedRoute'
+import { useAuth } from './hooks/useAuth'
 
 export default function App() {
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
       <Navbar />
-      <main className="flex-1 pt-16">
+      <main className="flex-1">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Landing />} />
-            <Route path="/ecosystem" element={<Ecosystem />} />
-            <Route path="/workers" element={<Workers />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/admin" element={<Admin />} />
+            {/* Public/Home Route */}
+            <Route
+              path="/"
+              element={isAuthenticated ? <Dashboard /> : <Landing />}
+            />
+
+            {/* Auth Routes */}
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/signup" element={isAuthenticated ? <Navigate to="/" replace /> : <Signup />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/finance"
+              element={
+                <ProtectedRoute>
+                  <Finance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/services"
+              element={
+                <ProtectedRoute>
+                  <Services />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workers"
+              element={
+                <ProtectedRoute>
+                  <Workers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute role="admin">
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all redirects to Home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </main>

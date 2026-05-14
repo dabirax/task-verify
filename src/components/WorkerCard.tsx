@@ -1,7 +1,23 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { 
+  MapPin, 
+  Star, 
+  Clock, 
+  CheckCircle2, 
+  ShieldCheck, 
+  TrendingUp,
+  BrainCircuit,
+  ArrowRight,
+  Eye
+} from 'lucide-react';
 import type { Worker } from '../types';
 import { formatNaira, formatPercent, formatRating, getInitials, getSkillColor, trustScoreLabel } from '../utils/formatters';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Progress } from './ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 
 interface WorkerCardProps {
   worker: Worker;
@@ -16,138 +32,134 @@ export default function WorkerCard({ worker, matchScore, matchReasons }: WorkerC
     : 0;
 
   const avatarBg = [
-    'from-emerald-400 to-teal-500',
-    'from-blue-400 to-indigo-500',
-    'from-violet-400 to-purple-500',
-    'from-orange-400 to-amber-500',
-    'from-pink-400 to-rose-500',
+    'bg-emerald-50 text-emerald-700',
+    'bg-blue-50 text-blue-700',
+    'bg-violet-50 text-violet-700',
+    'bg-orange-50 text-orange-700',
+    'bg-rose-50 text-rose-700',
   ][worker.id % 5];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(10,22,40,0.12)' }}
-      className="card p-5 flex flex-col gap-4 cursor-pointer group"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+      className="h-full"
     >
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${avatarBg} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm`}>
-          {worker.avatar_url ? (
-            <img src={worker.avatar_url} alt={worker.name} className="w-full h-full object-cover rounded-2xl" />
-          ) : (
-            getInitials(worker.name)
-          )}
-        </div>
-
-        {/* Name & Location */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-navy-900 text-sm truncate">{worker.name}</h3>
-          <div className="flex items-center gap-1 mt-0.5">
-            <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span className="text-xs text-slate-400">{worker.primary_location}</span>
+      <Card className="h-full border-slate-100 shadow-xl shadow-navy-100/30 rounded-[2rem] overflow-hidden flex flex-col group transition-all duration-500 hover:shadow-2xl hover:shadow-navy-100/50">
+        <CardHeader className="p-6 pb-4 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-14 h-14 rounded-2xl border-2 border-slate-50">
+                <AvatarImage src={worker.avatar_url || ''} className="object-cover" />
+                <AvatarFallback className={`${avatarBg} rounded-2xl font-black text-lg`}>
+                  {getInitials(worker.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-black text-navy-900 text-base group-hover:text-emerald-600 transition-colors">{worker.name}</h3>
+                <div className="flex items-center gap-1 mt-0.5 text-slate-400">
+                  <MapPin className="w-3 h-3" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{worker.primary_location}</span>
+                </div>
+              </div>
+            </div>
+            {worker.is_active && (
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 font-bold text-[10px] px-2 py-0.5 gap-1.5 uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Available
+              </Badge>
+            )}
           </div>
-        </div>
 
-        {/* Active Badge */}
-        <div className="flex flex-col items-end gap-1">
-          {worker.is_active && (
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-xs text-emerald-600 font-medium">Available</span>
-            </div>
-          )}
-          {matchScore !== undefined && (
-            <div className="badge bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs">
-              {matchScore}% match
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Skills */}
-      <div className="flex flex-wrap gap-1.5">
-        {worker.skills.slice(0, 4).map((skill) => (
-          <span key={skill} className={`badge text-xs ${getSkillColor(skill)}`}>
-            {skill}
-          </span>
-        ))}
-        {worker.skills.length > 4 && (
-          <span className="badge bg-slate-100 text-slate-500 text-xs">+{worker.skills.length - 4}</span>
-        )}
-      </div>
-
-      {/* AI Match Reasons */}
-      {matchReasons && matchReasons.length > 0 && (
-        <div className="bg-blue-50 rounded-xl px-3 py-2 border border-blue-100">
-          <p className="text-xs text-blue-700 font-medium mb-1">🤖 AI Match Insights</p>
-          <ul className="space-y-0.5">
-            {matchReasons.slice(0, 2).map((reason, i) => (
-              <li key={i} className="text-xs text-blue-600">• {reason}</li>
+          <div className="flex flex-wrap gap-1.5">
+            {worker.skills.slice(0, 3).map((skill) => (
+              <Badge key={skill} variant="secondary" className="bg-slate-50 text-slate-500 hover:bg-slate-100 border-none font-bold text-[9px] uppercase tracking-wider px-2 py-0.5">
+                {skill}
+              </Badge>
             ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-navy-900">{worker.tasks_completed}</div>
-          <div className="text-[10px] text-slate-400 font-medium mt-0.5">Tasks Done</div>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-navy-900">{formatRating(worker.avg_rating)}★</div>
-          <div className="text-[10px] text-slate-400 font-medium mt-0.5">Avg Rating</div>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-navy-900">{formatPercent(worker.on_time_rate)}</div>
-          <div className="text-[10px] text-slate-400 font-medium mt-0.5">On-Time</div>
-        </div>
-      </div>
-
-      {/* Trust Score & Earnings */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1 h-4 rounded-full bg-emerald-500"></div>
-            <span className="text-sm font-bold text-navy-900">{worker.trust_score}</span>
-            <span className={`text-xs font-semibold ${trustColor}`}>{trustLabel}</span>
+            {worker.skills.length > 3 && (
+              <Badge variant="outline" className="text-[9px] font-bold border-slate-100 text-slate-400">
+                +{worker.skills.length - 3}
+              </Badge>
+            )}
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5 ml-3">Trust Score</div>
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-bold text-navy-900">{formatNaira(worker.current_month_earnings)}</div>
-          <div className="text-[10px] text-slate-400">This Month</div>
-        </div>
-      </div>
+        </CardHeader>
 
-      {/* Success Rate Bar */}
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] text-slate-400 font-medium">Success Rate</span>
-          <span className="text-[10px] font-semibold text-navy-900">{successRate}%</span>
-        </div>
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${successRate}%` }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full"
-          />
-        </div>
-      </div>
+        <CardContent className="p-6 pt-0 flex-1 space-y-5">
+          {/* AI Match Reasons */}
+          {matchScore !== undefined && (
+            <div className="bg-blue-50/50 rounded-2xl p-3 border border-blue-100/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <BrainCircuit className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">AI Match Identity</span>
+                </div>
+                <span className="text-xs font-black text-blue-700">{matchScore}%</span>
+              </div>
+              <Progress value={matchScore} className="h-1.5 bg-blue-100" />
+              {matchReasons && matchReasons.length > 0 && (
+                <ul className="space-y-1 mt-2">
+                  {matchReasons.slice(0, 2).map((reason, i) => (
+                    <li key={i} className="text-[10px] text-blue-600/80 font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
-      {/* CTA */}
-      <Link
-        to={`/workers`}
-        className="btn-secondary text-xs py-2 justify-center group-hover:border-emerald-300 group-hover:text-emerald-700"
-      >
-        View Full Profile
-      </Link>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-slate-50/50 rounded-2xl p-3 text-center border border-slate-100/50">
+              <div className="text-sm font-black text-navy-900">{worker.tasks_completed}</div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Tasks</div>
+            </div>
+            <div className="bg-slate-50/50 rounded-2xl p-3 text-center border border-slate-100/50">
+              <div className="flex items-center justify-center gap-0.5 text-sm font-black text-navy-900">
+                {formatRating(worker.avg_rating)}
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+              </div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Rating</div>
+            </div>
+            <div className="bg-slate-50/50 rounded-2xl p-3 text-center border border-slate-100/50">
+              <div className="text-sm font-black text-navy-900">{formatPercent(worker.on_time_rate)}</div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Timing</div>
+            </div>
+          </div>
+
+          {/* Trust Score & Earnings */}
+          <div className="flex items-center justify-between py-1 px-1">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center ${trustColor} shadow-inner`}>
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black text-navy-900">{worker.trust_score}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${trustColor}`}>{trustLabel}</span>
+                </div>
+                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em] mt-0.5">Identity Trust</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-black text-navy-900 tracking-tight">{formatNaira(worker.current_month_earnings)}</div>
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">This Month</div>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="p-6 pt-0">
+          <Link to={`/workers`} className="w-full">
+            <Button variant="outline" className="w-full h-11 rounded-2xl border-slate-200 font-black text-xs uppercase tracking-widest hover:bg-navy-900 hover:text-white hover:border-navy-900 group transition-all duration-300 shadow-sm">
+              View Profile <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+        </CardFooter>
+      </Card>
     </motion.div>
   );
 }

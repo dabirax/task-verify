@@ -1,18 +1,20 @@
 export const formatNaira = (amount: number): string => {
-  if (amount >= 1_000_000) return `₦${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `₦${(amount / 1_000).toFixed(1)}K`;
-  return `₦${amount.toLocaleString()}`;
+  const value = Number(amount);
+  if (value >= 1_000_000) return `₦${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `₦${(value / 1_000).toFixed(1)}K`;
+  return `₦${value.toLocaleString()}`;
 };
 
 export const formatNumber = (n: number): string => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
+  const value = Number(n);
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString();
 };
 
-export const formatPercent = (rate: number): string => `${Math.round(rate * 100)}%`;
+export const formatPercent = (rate: number): string => `${Math.round(Number(rate) * 100)}%`;
 
-export const formatRating = (rating: number): string => rating.toFixed(1);
+export const formatRating = (rating: number): string => Number(rating || 0).toFixed(1);
 
 export const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
@@ -32,9 +34,10 @@ export const formatRelativeDate = (dateStr: string): string => {
 };
 
 export const trustScoreLabel = (score: number): { label: string; color: string } => {
-  if (score >= 900) return { label: 'Excellent', color: 'text-emerald-600' };
-  if (score >= 750) return { label: 'Good', color: 'text-blue-600' };
-  if (score >= 600) return { label: 'Fair', color: 'text-yellow-600' };
+  const value = Number(score);
+  if (value >= 900) return { label: 'Excellent', color: 'text-emerald-600' };
+  if (value >= 750) return { label: 'Good', color: 'text-blue-600' };
+  if (value >= 600) return { label: 'Fair', color: 'text-yellow-600' };
   return { label: 'Building', color: 'text-orange-500' };
 };
 

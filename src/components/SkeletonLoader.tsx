@@ -1,42 +1,50 @@
+import { ShieldCheck, AlertCircle, SearchX, RotateCcw } from 'lucide-react';
+import { Button } from './ui/button';
+
 export function WorkerCardSkeleton() {
   return (
-    <div className="card p-5 flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <div className="skeleton w-12 h-12 rounded-full"></div>
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="skeleton h-4 w-32 rounded"></div>
-          <div className="skeleton h-3 w-20 rounded"></div>
+    <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex flex-col gap-6 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="animate-pulse bg-slate-100 w-14 h-14 rounded-2xl"></div>
+          <div className="space-y-2">
+            <div className="animate-pulse bg-slate-100 h-4 w-32 rounded-lg"></div>
+            <div className="animate-pulse bg-slate-100 h-3 w-20 rounded-lg"></div>
+          </div>
         </div>
-        <div className="skeleton h-6 w-16 rounded-full"></div>
+        <div className="animate-pulse bg-slate-100 h-6 w-16 rounded-full"></div>
       </div>
       <div className="flex gap-2">
-        <div className="skeleton h-5 w-16 rounded-full"></div>
-        <div className="skeleton h-5 w-20 rounded-full"></div>
-        <div className="skeleton h-5 w-14 rounded-full"></div>
+        <div className="animate-pulse bg-slate-100 h-5 w-16 rounded-full"></div>
+        <div className="animate-pulse bg-slate-100 h-5 w-20 rounded-full"></div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="skeleton h-12 rounded-xl"></div>
-        <div className="skeleton h-12 rounded-xl"></div>
-        <div className="skeleton h-12 rounded-xl"></div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="animate-pulse bg-slate-50 h-14 rounded-2xl"></div>
+        <div className="animate-pulse bg-slate-50 h-14 rounded-2xl"></div>
+        <div className="animate-pulse bg-slate-50 h-14 rounded-2xl"></div>
       </div>
+      <div className="animate-pulse bg-slate-100 h-11 w-full rounded-2xl"></div>
     </div>
   );
 }
 
 export function TaskCardSkeleton() {
   return (
-    <div className="card p-5 flex flex-col gap-4">
+    <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex flex-col gap-6 shadow-sm">
       <div className="flex justify-between items-start">
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="skeleton h-5 w-3/4 rounded"></div>
-          <div className="skeleton h-3 w-1/2 rounded"></div>
+        <div className="flex-1 space-y-3">
+          <div className="animate-pulse bg-slate-100 h-6 w-3/4 rounded-lg"></div>
+          <div className="animate-pulse bg-slate-100 h-3 w-1/2 rounded-lg"></div>
         </div>
-        <div className="skeleton h-6 w-20 rounded-full"></div>
+        <div className="animate-pulse bg-slate-100 h-6 w-20 rounded-full"></div>
       </div>
-      <div className="skeleton h-10 w-full rounded-lg"></div>
-      <div className="flex justify-between items-center">
-        <div className="skeleton h-6 w-24 rounded"></div>
-        <div className="skeleton h-9 w-28 rounded-xl"></div>
+      <div className="animate-pulse bg-blue-50/50 h-24 w-full rounded-2xl"></div>
+      <div className="flex justify-between items-center pt-2">
+        <div className="space-y-2">
+          <div className="animate-pulse bg-slate-100 h-6 w-24 rounded-lg"></div>
+          <div className="animate-pulse bg-slate-100 h-3 w-16 rounded-lg"></div>
+        </div>
+        <div className="animate-pulse bg-slate-100 h-12 w-32 rounded-2xl"></div>
       </div>
     </div>
   );
@@ -44,37 +52,42 @@ export function TaskCardSkeleton() {
 
 export function StatCardSkeleton() {
   return (
-    <div className="card p-6 flex flex-col gap-3">
-      <div className="skeleton h-4 w-24 rounded"></div>
-      <div className="skeleton h-8 w-32 rounded"></div>
-      <div className="skeleton h-3 w-20 rounded"></div>
+    <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex flex-col gap-4 shadow-sm">
+      <div className="animate-pulse bg-slate-100 h-10 w-10 rounded-xl"></div>
+      <div className="space-y-2">
+        <div className="animate-pulse bg-slate-100 h-8 w-24 rounded-lg"></div>
+        <div className="animate-pulse bg-slate-100 h-3 w-16 rounded-lg"></div>
+      </div>
     </div>
   );
 }
 
 export function ChartSkeleton({ height = 300 }: { height?: number }) {
   return (
-    <div className="card p-6 flex flex-col gap-4">
-      <div className="skeleton h-5 w-40 rounded"></div>
-      <div className="skeleton rounded-xl" style={{ height }}></div>
+    <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-sm">
+      <div className="space-y-2">
+        <div className="animate-pulse bg-slate-100 h-6 w-48 rounded-lg"></div>
+        <div className="animate-pulse bg-slate-100 h-3 w-32 rounded-lg"></div>
+      </div>
+      <div className="animate-pulse bg-slate-50 rounded-2xl" style={{ height }}></div>
     </div>
   );
 }
 
 export function FullPageLoader() {
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
-      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 animate-pulse flex items-center justify-center">
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-          <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
-          <circle cx="8" cy="8" r="2" fill="white"/>
-        </svg>
+    <div className="min-h-[80vh] flex flex-col items-center justify-center gap-8">
+      <div className="relative">
+        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-emerald-500 to-blue-600 animate-spin-slow flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+          <ShieldCheck className="w-10 h-10 text-white animate-pulse" />
+        </div>
+        <div className="absolute inset-0 w-20 h-20 rounded-[2rem] border-4 border-emerald-500/20 animate-ping"></div>
       </div>
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-navy-900 font-semibold">Loading data</p>
-        <p className="text-slate-400 text-sm">Connecting to TaskVerify API…</p>
+      <div className="flex flex-col items-center gap-3 text-center px-6">
+        <h2 className="text-2xl font-black text-navy-900 tracking-tight leading-none uppercase tracking-[0.2em]">Authenticating</h2>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Connecting to National OS Infrastructure…</p>
       </div>
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -89,20 +102,18 @@ export function FullPageLoader() {
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 py-16">
-      <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
-        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-        </svg>
+    <div className="min-h-[40vh] flex flex-col items-center justify-center gap-6 py-20 text-center px-6">
+      <div className="w-20 h-20 rounded-[2rem] bg-red-50 border border-red-100 flex items-center justify-center shadow-xl shadow-red-100/50">
+        <AlertCircle className="w-10 h-10 text-red-500" />
       </div>
-      <div className="text-center">
-        <p className="font-semibold text-navy-900 mb-1">Something went wrong</p>
-        <p className="text-slate-400 text-sm max-w-xs">{message}</p>
+      <div>
+        <h3 className="text-xl font-black text-navy-900 mb-2 uppercase tracking-widest">System Interruption</h3>
+        <p className="text-slate-400 text-sm font-medium max-w-xs mx-auto leading-relaxed">{message}</p>
       </div>
       {onRetry && (
-        <button onClick={onRetry} className="btn-primary text-sm py-2 px-5">
-          Try Again
-        </button>
+        <Button onClick={onRetry} className="h-12 px-8 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-navy-100">
+          <RotateCcw className="w-4 h-4 mr-2" /> Attempt Reconnect
+        </Button>
       )}
     </div>
   );
@@ -110,16 +121,50 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 py-16">
-      <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
-        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 12h4"/>
-        </svg>
+    <div className="min-h-[40vh] flex flex-col items-center justify-center gap-6 py-20 text-center px-6">
+      <div className="w-20 h-20 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-center shadow-xl shadow-slate-100/50">
+        <SearchX className="w-10 h-10 text-slate-300" />
       </div>
-      <div className="text-center">
-        <p className="font-semibold text-navy-900 mb-1">{title}</p>
-        <p className="text-slate-400 text-sm max-w-xs">{description}</p>
+      <div>
+        <h3 className="text-xl font-black text-navy-900 mb-2 uppercase tracking-widest">{title}</h3>
+        <p className="text-slate-400 text-sm font-medium max-w-xs mx-auto leading-relaxed">{description}</p>
       </div>
     </div>
   );
+}
+
+export function SkeletonLoader({ type }: { type: 'dashboard' | 'tasks' | 'workers' | 'stats' }) {
+  if (type === 'dashboard') {
+    return (
+      <div className="space-y-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => <StatCardSkeleton key={i} />)}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-8 h-[400px] animate-pulse shadow-sm"></div>
+          </div>
+          <div className="bg-white rounded-[2.5rem] p-8 h-[400px] animate-pulse shadow-sm"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (type === 'tasks') {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[1, 2, 3, 4, 5, 6].map((i) => <TaskCardSkeleton key={i} />)}
+      </div>
+    );
+  }
+
+  if (type === 'workers') {
+    return (
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => <WorkerCardSkeleton key={i} />)}
+      </div>
+    );
+  }
+
+  return <StatCardSkeleton />;
 }

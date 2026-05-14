@@ -1,15 +1,35 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { api } from '../services/api'
-import type { FinancialProfile, WorkerStats } from '../types'
+import { 
+  Wallet, 
+  TrendingUp, 
+  ShieldCheck, 
+  ArrowUpRight, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle,
+  Landmark,
+  PieChart as PieChartIcon,
+  HelpCircle,
+  BadgeCheck,
+  Briefcase,
+  Star,
+} from 'lucide-react'
 import { formatNaira } from '../utils/formatters'
 import { FullPageLoader } from '../components/SkeletonLoader'
 import { useApp } from '../context/AppContext'
-
-const WORKER_ID = 1
+import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { Progress } from '../components/ui/progress'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { useWorkerProfile, useWorkerCreditScore } from '../hooks/useWorkerProfileQueries'
+import { useAuth } from '../hooks/useAuth'
+import LoanModal from '../components/LoanModal'
+import InsuranceModal from '../components/InsuranceModal'
+import KYCModal from '../components/KYCModal'
 
 const earningsMock = [
   { month: 'Jul', earnings: 18000 }, { month: 'Aug', earnings: 22000 },
@@ -17,10 +37,10 @@ const earningsMock = [
   { month: 'Nov', earnings: 31000 }, { month: 'Dec', earnings: 32000 },
 ]
 
-const riskColors: Record<string, { bg: string; text: string; bar: string }> = {
-  low: { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
-  medium: { bg: 'bg-yellow-50', text: 'text-yellow-700', bar: 'bg-yellow-500' },
-  high: { bg: 'bg-red-50', text: 'text-red-700', bar: 'bg-red-500' },
+const riskColors: Record<string, { bg: string; text: string; bar: string; iconColor: string }> = {
+  low: { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500', iconColor: 'text-emerald-500' },
+  medium: { bg: 'bg-yellow-50', text: 'text-yellow-700', bar: 'bg-yellow-500', iconColor: 'text-yellow-500' },
+  high: { bg: 'bg-red-50', text: 'text-red-700', bar: 'bg-red-500', iconColor: 'text-red-500' },
 }
 
 function CreditGauge({ score }: { score: number }) {
@@ -39,8 +59,8 @@ function CreditGauge({ score }: { score: number }) {
           animate={{ strokeDasharray: `${pct * 251} 251` }}
           transition={{ duration: 1.2, ease: 'easeOut' }}
         />
-        <text x="100" y="100" textAnchor="middle" fontSize="28" fontWeight="900" fill="#0A1628">{score}</text>
-        <text x="100" y="116" textAnchor="middle" fontSize="11" fill={color} fontWeight="600">{label}</text>
+        <text x="100" y="100" textAnchor="middle" className="text-3xl font-black fill-navy-900">{score}</text>
+        <text x="100" y="116" textAnchor="middle" className="text-[10px] font-black uppercase tracking-widest" fill={color}>{label}</text>
       </svg>
     </div>
   )
@@ -48,181 +68,229 @@ function CreditGauge({ score }: { score: number }) {
 
 export default function Finance() {
   const { addToast } = useApp()
-  const [profile, setProfile] = useState<FinancialProfile | null>(null)
-  const [stats, setStats] = useState<WorkerStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  
+  const { data: workerProfile, isLoading: loadingProfile } = useWorkerProfile()
+  const { data: creditProfile, isLoading: loadingCredit } = useWorkerCreditScore()
 
-  useEffect(() => {
-    setLoading(true)
-    Promise.all([
-      api.getWorkerFinancialProfile(WORKER_ID).catch(() => null),
-      api.getWorkerStats(WORKER_ID).catch(() => null),
-    ]).then(([fp, ws]) => {
-      setProfile(fp as FinancialProfile | null)
-      setStats(ws as WorkerStats | null)
-      if (!fp) addToast('Using simulated financial data — API warming up.', 'info')
-    }).finally(() => setLoading(false))
-  }, [])
+  const [showLoan, setShowLoan] = useState(false)
+  const [showInsurance, setShowInsurance] = useState(false)
+  const [showKYC, setShowKYC] = useState(false)
+
+  const isLoading = loadingProfile || loadingCredit
 
   // Fallback data
-  const creditScore = profile?.credit_score ?? 724
-  const loanEligible = profile?.loan_eligibility ?? true
-  const recommendedLoan = profile?.recommended_loan ?? 150000
-  const riskLevel = (profile?.insurance_risk_level ?? 'low').toLowerCase()
+  const creditScore = creditProfile?.credit_score ?? user?.trust_score ?? 724
+  const loanEligible = creditProfile?.loan_eligibility ?? true
+  const recommendedLoan = creditProfile?.recommended_loan ?? 150000
+  const riskLevel = (creditProfile?.insurance_risk_level ?? 'low').toLowerCase()
   const risk = riskColors[riskLevel] ?? riskColors.low
-  const walletBalance = stats?.current_month_earnings ?? 32000
-  const totalEarnings = stats?.total_earnings ?? 180000
-  const onTimeRate = stats?.on_time_rate ?? 0.96
+  const walletBalance = workerProfile?.current_month_earnings ?? 32000
+  const totalEarnings = workerProfile?.total_earnings ?? 180000
+  const onTimeRate = workerProfile?.on_time_rate ?? 0.96
 
-  if (loading) return <FullPageLoader />
+  if (isLoading) return <FullPageLoader />
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-      {/* Header */}
-      <section className="pt-16 pb-12 bg-gradient-to-br from-violet-950 via-navy-900 to-blue-950 text-white">
-        <div className="page-container">
-          <span className="badge bg-white/10 border border-white/20 text-white mb-4">AI Finance Dashboard</span>
-          <h1 className="text-5xl font-black mb-2 leading-tight">Your Economic<br /><span className="text-emerald-400">Financial Identity</span></h1>
-          <p className="text-slate-400 text-lg">Alternative credit scoring powered by your real work history — not bank statements.</p>
+    <>
+      <div className="pt-24 pb-20 bg-slate-50 min-h-screen">
+      <div className="page-container">
+        {/* Page Header */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-black text-navy-900 tracking-tight leading-tight mb-2">
+            Finance & Trust Hub
+          </h1>
+          <p className="text-slate-400 text-sm font-medium">
+            Manage your earnings, build trust score, and access financial opportunities.
+          </p>
         </div>
-      </section>
 
-      <section className="py-12">
-        <div className="page-container grid lg:grid-cols-3 gap-6">
-          {/* Credit Score */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="card p-6 lg:col-span-1 text-center">
-            <h2 className="font-bold text-navy-900 mb-1">Credit Score</h2>
-            <p className="text-xs text-slate-400 mb-4">Alternative data-driven scoring</p>
-            <CreditGauge score={creditScore} />
-            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-              {[
-                { label: 'Work Consistency', pct: 94 },
-                { label: 'Payment History', pct: 98 },
-                { label: 'Dispute Rate', pct: 100 },
-                { label: 'Income Frequency', pct: 88 },
-              ].map((factor) => (
-                <div key={factor.label} className="text-left">
-                  <div className="flex justify-between mb-1 text-[10px] font-medium text-slate-500">
-                    <span>{factor.label}</span><span>{factor.pct}%</span>
+        <div className="space-y-8">
+          <div className="grid lg:grid-cols-3 gap-8">
+              {/* Credit Score Card */}
+              <Card className="lg:col-span-1 border-none shadow-2xl shadow-navy-100/50 rounded-[2.5rem] p-8 bg-white flex flex-col items-center">
+                <div className="text-center mb-8">
+                  <h2 className="font-black text-navy-900 text-xl tracking-tight">National Trust Score</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">AI-Driven Financial Reputation</p>
+                </div>
+                
+                <CreditGauge score={creditScore} />
+                
+                <div className="w-full space-y-5 mt-10">
+                  {[
+                    { label: 'Work Consistency', pct: 94, icon: Clock },
+                    { label: 'Payment Velocity', pct: 98, icon: TrendingUp },
+                    { label: 'Dispute-Free Rate', pct: 100, icon: ShieldCheck },
+                    { label: 'Income Growth', pct: 88, icon: ArrowUpRight },
+                  ].map((factor) => (
+                    <div key={factor.label} className="space-y-2">
+                      <div className="flex justify-between items-center px-1">
+                        <div className="flex items-center gap-2">
+                          <factor.icon className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-[10px] font-black text-navy-900 uppercase tracking-wider">{factor.label}</span>
+                        </div>
+                        <span className="text-xs font-black text-emerald-600">{factor.pct}%</span>
+                      </div>
+                      <Progress value={factor.pct} className="h-1.5 bg-slate-100" />
+                    </div>
+                  ))}
+                </div>
+                
+                <Button variant="ghost" className="mt-8 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-navy-900 gap-2">
+                  Learn how it's calculated <HelpCircle className="w-4 h-4" />
+                </Button>
+              </Card>
+
+              {/* Main Dashboard Column */}
+              <div className="lg:col-span-2 flex flex-col gap-8">
+                {/* Top Stat Row */}
+                <div className="grid sm:grid-cols-3 gap-6">
+                  {/* Wallet */}
+                  <Card className="border-none bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-[2rem] p-6 shadow-xl shadow-emerald-100 relative overflow-hidden group">
+                    <Wallet className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 group-hover:scale-110 transition-transform" />
+                    <div className="relative z-10">
+                      <div className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">Wallet Balance</div>
+                      <div className="text-3xl font-black mb-1">{formatNaira(walletBalance)}</div>
+                      <div className="text-[10px] font-bold opacity-70">Secured via Squad Rails</div>
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span>Total Earnings</span>
+                          <span>{formatNaira(totalEarnings)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Loan Eligibility */}
+                  <Card className={`border-none rounded-[2rem] p-6 shadow-xl relative overflow-hidden ${loanEligible ? 'bg-blue-50 text-blue-900' : 'bg-slate-50 text-slate-400'}`}>
+                    <Landmark className={`absolute -right-4 -bottom-4 w-24 h-24 ${loanEligible ? 'text-blue-200/50' : 'text-slate-200/50'}`} />
+                    <div className="relative z-10">
+                      <div className="text-[10px] font-black uppercase tracking-widest mb-2">Loan Capacity</div>
+                      <div className="text-2xl font-black mb-1 flex items-center gap-2">
+                        {loanEligible ? (
+                          <><CheckCircle2 className="w-5 h-5 text-blue-600" /> ELIGIBLE</>
+                        ) : (
+                          <><AlertCircle className="w-5 h-5 text-slate-300" /> PENDING</>
+                        )}
+                      </div>
+                      {loanEligible ? (
+                        <div className="text-xl font-black text-blue-700 mt-4">{formatNaira(recommendedLoan)}</div>
+                      ) : (
+                        <div className="text-xs font-bold mt-4">Continue building history</div>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Insurance Status */}
+                  <Card className={`border-none rounded-[2rem] p-6 shadow-xl relative overflow-hidden ${risk.bg} ${risk.text}`}>
+                    <ShieldCheck className={`absolute -right-4 -bottom-4 w-24 h-24 opacity-10`} />
+                    <div className="relative z-10">
+                      <div className="text-[10px] font-black uppercase tracking-widest mb-2">Insurance Risk</div>
+                      <div className="text-2xl font-black mb-1 flex items-center gap-2 uppercase">
+                        <BadgeCheck className={`w-5 h-5 ${risk.iconColor}`} /> {riskLevel}
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span>Reliability Pct</span>
+                          <span>{riskLevel === 'low' ? '98%' : '82%'}</span>
+                        </div>
+                        <Progress value={riskLevel === 'low' ? 98 : 82} className="h-1 bg-white/50" />
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Income Trend Chart */}
+                <Card className="border-none shadow-2xl shadow-navy-100/50 rounded-[2.5rem] p-8 bg-white flex-1">
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <h3 className="font-black text-navy-900 text-xl tracking-tight">Income Analytics</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Verified Revenue Pipeline</p>
+                    </div>
+                    <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-xs px-4 py-1.5">+42% YoY Growth</Badge>
                   </div>
-                  <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${factor.pct}%` }}
-                      transition={{ delay: 0.5, duration: 0.8 }}
-                      className="h-full bg-emerald-500 rounded-full" />
+                  
+                  <div className="h-[220px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={earningsMock}>
+                        <defs>
+                          <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="8 8" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="month" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${v / 1000}K`} />
+                        <Tooltip 
+                          formatter={(v: unknown) => [`₦${Number(v).toLocaleString()}`, 'Earnings']} 
+                          contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 50px rgba(10,22,40,0.1)', fontSize: '12px', fontWeight: 'bold' }} 
+                        />
+                        <Area type="monotone" dataKey="earnings" stroke="#10B981" strokeWidth={4} fill="url(#earnGrad)" dot={{ fill: '#10B981', stroke: '#fff', strokeWidth: 2, r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Right Column */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* Top Row */}
-            <div className="grid sm:grid-cols-3 gap-4">
-              {/* Wallet */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="card p-5 sm:col-span-1 bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-                <div className="text-xs font-medium opacity-80 mb-1">Wallet Balance</div>
-                <div className="text-3xl font-black mb-1">{formatNaira(walletBalance)}</div>
-                <div className="text-xs opacity-70">This month's earnings</div>
-                <div className="mt-3 text-xs font-medium opacity-80">Total: {formatNaira(totalEarnings)}</div>
-              </motion.div>
-
-              {/* Loan Eligibility */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className={`card p-5 ${loanEligible ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
-                <div className="text-xs font-medium text-slate-500 mb-1">Loan Eligibility</div>
-                <div className={`text-2xl font-black mb-1 ${loanEligible ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {loanEligible ? '✅ Eligible' : '❌ Not Yet'}
-                </div>
-                {loanEligible && (
-                  <>
-                    <div className="text-xs text-slate-500 mb-2">Recommended amount</div>
-                    <div className="text-xl font-bold text-navy-900">{formatNaira(recommendedLoan)}</div>
-                  </>
-                )}
-              </motion.div>
-
-              {/* Insurance Risk */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                className={`card p-5 ${risk.bg}`}>
-                <div className="text-xs font-medium text-slate-500 mb-1">Insurance Risk</div>
-                <div className={`text-2xl font-black capitalize mb-2 ${risk.text}`}>{riskLevel} Risk</div>
-                <div className="h-2 bg-white/60 rounded-full overflow-hidden">
-                  <div className={`h-full ${risk.bar} rounded-full`}
-                    style={{ width: riskLevel === 'low' ? '25%' : riskLevel === 'medium' ? '60%' : '90%' }} />
-                </div>
-                <div className="text-xs text-slate-400 mt-2">{riskLevel === 'low' ? 'Premium eligibility' : 'Standard coverage'}</div>
-              </motion.div>
-            </div>
-
-            {/* Earnings Chart */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-              className="card p-6 flex-1">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-bold text-navy-900">Income Trend</h3>
-                  <p className="text-xs text-slate-400">Monthly earnings (₦)</p>
-                </div>
-                <div className="badge bg-emerald-100 text-emerald-700">+42% growth</div>
+                </Card>
               </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={earningsMock}>
-                  <defs>
-                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${v / 1000}K`} />
-                  <Tooltip formatter={(v: unknown) => [`₦${Number(v).toLocaleString()}`, 'Earnings']} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                  <Area type="monotone" dataKey="earnings" stroke="#10B981" strokeWidth={2.5} fill="url(#earnGrad)" dot={{ fill: '#10B981', r: 4 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </div>
 
-          {/* Performance Stats */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="card p-6 lg:col-span-3">
-            <h3 className="font-bold text-navy-900 mb-4">Credit Factors — How Your Score Is Calculated</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { label: 'On-Time Rate', value: `${Math.round(onTimeRate * 100)}%`, icon: '⏱️', desc: 'Tasks completed on schedule' },
-                { label: 'Tasks Completed', value: stats?.tasks_completed ?? 42, icon: '✅', desc: 'Total verified deliveries' },
-                { label: 'Avg Rating', value: `${(stats?.avg_rating ?? 4.8).toFixed(1)}★`, icon: '⭐', desc: 'Customer satisfaction score' },
-                { label: 'Dispute Rate', value: '0%', icon: '🛡️', desc: 'Clean transaction history' },
-              ].map((metric) => (
-                <div key={metric.label} className="flex items-start gap-3">
-                  <span className="text-2xl">{metric.icon}</span>
-                  <div>
-                    <div className="text-2xl font-black text-navy-900">{metric.value}</div>
-                    <div className="text-sm font-semibold text-navy-900">{metric.label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{metric.desc}</div>
+              {/* Identity Factors Row */}
+              <Card className="lg:col-span-3 border-none shadow-2xl shadow-navy-100/50 rounded-[2.5rem] p-10 bg-white">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-10 h-10 rounded-xl bg-navy-900 flex items-center justify-center text-white">
+                    <PieChartIcon className="w-5 h-5" />
                   </div>
+                  <h3 className="font-black text-navy-900 text-xl tracking-tight">National Economic Identity Factors</h3>
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
+                  {[
+                    { label: 'Reliability Rate', value: `${Math.round(onTimeRate * 100)}%`, icon: Clock, desc: 'Tasks completed on or before schedule' },
+                    { label: 'Ecosystem Volume', value: workerProfile?.tasks_completed ?? 42, icon: Briefcase, desc: 'Total verified transactions on OS' },
+                    { label: 'Public Rating', value: `${Number(workerProfile?.avg_rating ?? 4.8).toFixed(1)}★`, icon: Star, desc: 'AI-verified customer satisfaction score' },
+                    { label: 'System Integrity', value: '100%', icon: ShieldCheck, desc: 'Zero disputes or flagged interactions' },
+                  ].map((metric) => (
+                    <div key={metric.label} className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center">
+                          <metric.icon className="w-5 h-5 text-navy-900" />
+                        </div>
+                        <div className="text-2xl font-black text-navy-900">{metric.value}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-navy-900 uppercase tracking-widest mb-1">{metric.label}</div>
+                        <div className="text-[10px] text-slate-400 font-bold leading-relaxed">{metric.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
 
-          {/* Loan CTA */}
-          {loanEligible && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-              className="card p-6 lg:col-span-3 bg-gradient-to-r from-navy-900 to-blue-900 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div>
-                <div className="text-2xl font-black mb-1">You qualify for {formatNaira(recommendedLoan)} loan 🎉</div>
-                <p className="text-slate-300 text-sm">Based on your work history, trust score, and income consistency. No bank statement needed.</p>
-              </div>
-              <button className="flex-shrink-0 px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all whitespace-nowrap">
-                Apply Now →
-              </button>
-            </motion.div>
-          )}
+              {/* Credit Opportunity CTA */}
+              {loanEligible && (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+                  className="lg:col-span-3 rounded-[2.5rem] p-10 bg-gradient-to-r from-navy-950 to-blue-900 text-white flex flex-col lg:flex-row items-center justify-between gap-10 overflow-hidden relative"
+                >
+                  <div className="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none">
+                     <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(#ffffff_2px,transparent_2px)] [background-size:24px_24px]" />
+                  </div>
+                  <div className="relative z-10 text-center lg:text-left">
+                    <Badge className="bg-emerald-500 text-white border-none px-4 py-1 mb-4 uppercase tracking-widest font-black">Capital Access Unlocked</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black mb-4 tracking-tight leading-tight">You qualify for {formatNaira(recommendedLoan)} in working capital 🎉</h2>
+                    <p className="text-slate-400 text-lg font-medium max-w-2xl">Based on your ecosystem history and trust score. Zero paperwork. Instant disbursement.</p>
+                  </div>
+                  <Button onClick={() => setShowLoan(true)} className="h-16 px-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl shadow-2xl shadow-emerald-900/20 whitespace-nowrap relative z-10 transition-transform hover:scale-105 active:scale-95">
+                    Apply & Unlock Capital <ArrowUpRight className="ml-3 w-6 h-6" />
+                  </Button>
+                </motion.div>
+              )}
+            </div>
         </div>
-      </section>
-    </motion.div>
+      </div>
+    </div>
+
+    <LoanModal isOpen={showLoan} onClose={() => setShowLoan(false)} maxAmount={creditProfile?.recommended_loan ?? 150000} />
+    <InsuranceModal isOpen={showInsurance} onClose={() => setShowInsurance(false)} />
+    <KYCModal isOpen={showKYC} onClose={() => setShowKYC(false)} />
+    </>
   )
 }

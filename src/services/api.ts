@@ -1,93 +1,191 @@
-import type { Worker, Task, WorkerStats, FinancialProfile } from '../types';
+import { apiClient } from './apiClient';
+import type {
+  Worker,
+  Task,
+  WorkerStats,
+  FinancialProfile,
+  User,
+  WorkerMatch,
+  TaskVerificationResult,
+  Notification,
+  Wallet,
+  WalletTransaction,
+  CreateTaskPayload,
+} from '../types';
 
-const BASE_URL = 'https://verify-s.onrender.com';
-
-async function fetchWithRetry<T>(
-  url: string,
-  options: RequestInit = {},
-  retries = 2
-): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
-
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    return res.json();
-  } catch (err) {
-    clearTimeout(timeout);
-    if (retries > 0) {
-      await new Promise((r) => setTimeout(r, 1500));
-      return fetchWithRetry<T>(url, options, retries - 1);
-    }
-    throw err;
-  }
-}
-
+// ─── Health ────────────────────────────────────────────────────────────────────
 export const api = {
-  // Health check
-  health: () => fetchWithRetry<{ status: string; timestamp: string; environment: string }>(`${BASE_URL}/health`),
+  health: () =>
+    apiClient<{ status: string; timestamp: string; environment: string }>('/health'),
 
-  // Tasks
-  getTasks: (params?: { status?: string; location?: string }) => {
-    const qs = params
-      ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString()
-      : '';
-    return fetchWithRetry<Task[]>(`${BASE_URL}/api/v1/tasks${qs}`);
-  },
-
-  getTask: (id: number) => fetchWithRetry<Task>(`${BASE_URL}/api/v1/tasks/${id}`),
-
-  createTask: (data: {
-    title: string;
-    description: string;
-    amount_naira: number;
-    task_location: string;
-    due_date: string;
-    deliverable_spec: Record<string, unknown>;
-    required_skills?: string[];
-    client_name?: string;
-    client_email?: string;
-    location_latitude?: number;
-    location_longitude?: number;
-  }) =>
-    fetchWithRetry<{ task: Task; matches: WorkerMatch[] }>(`${BASE_URL}/api/v1/tasks`, {
+  // ─── Auth ────────────────────────────────────────────────────────────────────
+  login: (credentials: { email: string; password: string }) =>
+    apiClient<{ user: User; token: string }>('/api/v1/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: credentials,
+    }),
+
+  register: (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    phone?: string;
+    role?: string;
+    worker_id?: number;
+  }) =>
+    apiClient<{ user: User; token: string }>('/api/v1/auth/register', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // ─── Tasks (Public/General) ──────────────────────────────────────────────────
+  getTasks: (params?: { status?: string; location?: string }) =>
+    apiClient<Task[]>('/api/v1/tasks', { params }),
+
+  getTask: (id: number) =>
+    apiClient<Task>(`/api/v1/tasks/${id}`),
+
+  createTask: (data: CreateTaskPayload) =>
+    apiClient<{ task: Task; matches: WorkerMatch[] }>('/api/v1/tasks', {
+      method: 'POST',
+      body: data,
+    }),
+
+  createTaskMultipart: (formData: FormData) =>
+    apiClient<{ task: Task; matches: WorkerMatch[] }>('/api/v1/tasks', {
+      method: 'POST',
+      body: formData,
     }),
 
   getTaskStatus: (id: number) =>
-    fetchWithRetry<{ id: number; status: string; assigned_worker_id: number | null; submitted_at: string | null; verified_at: string | null }>(
-      `${BASE_URL}/api/v1/tasks/${id}/status`
-    ),
+    apiClient<{
+      id: number;
+      status: string;
+      assigned_worker_id: number | null;
+      submitted_at: string | null;
+      verified_at: string | null;
+    }>(`/api/v1/tasks/${id}/status`),
 
-  // Workers
-  getWorkers: (params?: { location?: string; skill?: string; minRating?: number }) => {
-    const qs = params
-      ? '?' + new URLSearchParams(
-          Object.entries(params)
-            .filter(([, v]) => v !== undefined && v !== null && v !== '')
-            .map(([k, v]) => [k, String(v)])
-        ).toString()
-      : '';
-    return fetchWithRetry<Worker[]>(`${BASE_URL}/api/v1/workers${qs}`);
-  },
+  shortlistWorkers: (id: number, worker_ids: number[]) =>
+    apiClient<any>(`/api/v1/tasks/${id}/shortlist`, {
+      method: 'POST',
+      body: { worker_ids },
+    }),
 
-  getWorker: (id: number) => fetchWithRetry<Worker>(`${BASE_URL}/api/v1/workers/${id}`),
+  applyForTask: (id: number, data: { worker_id: number; proposed_price: number; message?: string }) =>
+    apiClient<any>(`/api/v1/tasks/${id}/apply`, {
+      method: 'POST',
+      body: data,
+    }),
 
-  getWorkerStats: (id: number) => fetchWithRetry<WorkerStats>(`${BASE_URL}/api/v1/workers/${id}/stats`),
+  confirmWorker: (id: number, worker_id: number) =>
+    apiClient<any>(`/api/v1/tasks/${id}/confirm-worker`, {
+      method: 'POST',
+      body: { worker_id },
+    }),
+
+  acceptAssignment: (id: number, worker_id: number) =>
+    apiClient<{ task: Task; escrow: any }>(`/api/v1/tasks/${id}/accept-assignment`, {
+      method: 'POST',
+      body: { worker_id },
+    }),
+
+  recommendFinal: (id: number) =>
+    apiClient<any>(`/api/v1/tasks/${id}/recommend-final`, { method: 'POST' }),
+
+  assignWorker: (id: number, worker_id: number) =>
+    apiClient<{ task: Task; escrow: any }>(`/api/v1/tasks/${id}/assign`, {
+      method: 'POST',
+      body: { worker_id },
+    }),
+
+  submitProof: (id: number, formData: FormData) =>
+    apiClient<{ task: Task; verification: TaskVerificationResult }>(`/api/v1/tasks/${id}/submit-proof`, {
+      method: 'POST',
+      body: formData,
+    }),
+
+  fileComplaint: (id: number) =>
+    apiClient<{ message: string; task: Task }>(`/api/v1/tasks/${id}/complaint`, {
+      method: 'POST',
+      body: {},
+    }),
+
+  fileDispute: (id: number, message?: string) =>
+    apiClient<{ message: string; task: Task }>(`/api/v1/tasks/${id}/dispute`, {
+      method: 'POST',
+      body: { message },
+    }),
+
+  // ─── Workers (Public/General) ────────────────────────────────────────────────
+  getWorkers: (params?: { location?: string; skill?: string; minRating?: number }) =>
+    apiClient<Worker[]>('/api/v1/workers', { params }),
+
+  getWorker: (id: number) =>
+    apiClient<Worker>(`/api/v1/workers/${id}`),
+
+  createWorker: (data: {
+    name: string;
+    email: string;
+    primary_location: string;
+    phone?: string;
+    skills?: string[];
+    bio?: string;
+    latitude?: number;
+    longitude?: number;
+    avatar_url?: string;
+  }) =>
+    apiClient<Worker>('/api/v1/workers', { method: 'POST', body: data }),
+
+  updateWorker: (id: number, data: Partial<Worker>) =>
+    apiClient<Worker>(`/api/v1/workers/${id}`, { method: 'PUT', body: data }),
+
+  getWorkerStats: (id: number) =>
+    apiClient<WorkerStats>(`/api/v1/workers/${id}/stats`),
 
   getWorkerFinancialProfile: (id: number) =>
-    fetchWithRetry<FinancialProfile>(`${BASE_URL}/api/v1/workers/${id}/financial-profile`),
-};
+    apiClient<FinancialProfile>(`/api/v1/workers/${id}/financial-profile`),
 
-// Re-export WorkerMatch interface
-export interface WorkerMatch {
-  worker_id: number;
-  name: string;
-  match_score: number;
-  reasons: string[];
-  distance_km: number;
-}
+  // ─── Wallet ──────────────────────────────────────────────────────────────────
+  getWallet: () =>
+    apiClient<Wallet>('/api/v1/wallet'),
+
+  getWalletTransactions: () =>
+    apiClient<WalletTransaction[]>('/api/v1/wallet/transactions'),
+
+  generateVirtualAccount: () =>
+    apiClient<{ success: boolean; virtualAccount: string }>('/api/v1/wallet/virtual-account', {
+      method: 'POST',
+    }),
+
+  requestWithdrawal: (data: {
+    amount: number;
+    bankCode: string;
+    bankAccountNumber: string;
+    bankName: string;
+  }) =>
+    apiClient<{ success: boolean; message: string; wallet: Wallet }>('/api/v1/wallet/withdraw', {
+      method: 'POST',
+      body: data,
+    }),
+
+  // ─── Notifications ───────────────────────────────────────────────────────────
+  getNotifications: (params?: { limit?: number; offset?: number }) =>
+    apiClient<Notification[]>('/api/v1/notifications', { params }),
+
+  markNotificationRead: (id: number) =>
+    apiClient<any>(`/api/v1/notifications/${id}/read`, { method: 'POST' }),
+
+  markAllNotificationsRead: () =>
+    apiClient<any>('/api/v1/notifications/read-all', { method: 'POST' }),
+
+  broadcastNotification: (data: { title: string; message: string; targetRole?: string }) =>
+    apiClient<any>('/api/v1/notifications/broadcast', { method: 'POST', body: data }),
+
+  sendNotification: (data: { userId: number; title: string; message: string; type?: string; metadata?: object }) =>
+    apiClient<any>('/api/v1/notifications/send', { method: 'POST', body: data }),
+
+  // ─── Debug ───────────────────────────────────────────────────────────────────
+  getDebugAILogs: () =>
+    apiClient<any[]>('/api/v1/debug/ai-logs'),
+};

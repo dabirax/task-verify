@@ -5,6 +5,39 @@ export default {
   theme: {
     extend: {
       colors: {
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
         navy: {
           50: '#EFF4FF',
           100: '#DBE8FE',
@@ -20,8 +53,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ["var(--font-sans)", 'Inter', 'system-ui', 'sans-serif'],
+        heading: ["var(--font-heading)", 'Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-brand': 'linear-gradient(135deg, #10B981 0%, #2563EB 100%)',
@@ -62,8 +95,11 @@ export default {
         '2xl': '16px',
         '3xl': '24px',
         '4xl': '32px',
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };

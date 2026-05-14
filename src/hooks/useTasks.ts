@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
-import type { Task } from '../types';
 
 interface UseTasksOptions {
   status?: string;
@@ -8,26 +7,30 @@ interface UseTasksOptions {
 }
 
 export function useTasks(options: UseTasksOptions = {}) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['tasks', options],
+    queryFn: () => api.getTasks(options),
+  });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.getTasks(options);
-      setTasks(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, [options.status, options.location]);
+  return {
+    tasks: query.data || [],
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
+}
 
-  useEffect(() => {
-    load();
-  }, [load]);
+export function useTask(id: number) {
+  const query = useQuery({
+    queryKey: ['tasks', id],
+    queryFn: () => api.getTask(id),
+    enabled: !!id,
+  });
 
-  return { tasks, loading, error, refetch: load };
+  return {
+    task: query.data || null,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refetch: query.refetch,
+  };
 }

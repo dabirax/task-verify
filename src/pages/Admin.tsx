@@ -1,246 +1,261 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Users, 
+  Briefcase, 
+  AlertTriangle, 
+  Scale, 
+  ShieldCheck, 
+  BrainCircuit, 
+  CheckCircle2, 
+  XCircle, 
+  FileCheck, 
+  Activity,
+  ChevronRight,
+  MapPin,
+  Clock,
+  Zap,
+  LayoutDashboard,
+  ShieldAlert,
+  Terminal
+} from 'lucide-react'
 import { useWorkers } from '../hooks/useWorkers'
 import { useTasks } from '../hooks/useTasks'
+import { 
+  useAdminDashboard, 
+  useAdminTasks, 
+  useAdminWorkers, 
+  useAdminKYCSubmissions, 
+  useAdminAILogs 
+} from '../hooks/useAdminQueries'
 import { formatNaira, formatDate, statusConfig, getInitials } from '../utils/formatters'
 import { kpiMetrics } from '../utils/analyticsData'
 import { useApp } from '../context/AppContext'
-
-const AI_LOGS = [
-  { id: 1, action: 'Worker Match', worker: 'Amaka Okafor', task: 'Office Cleaning', score: 92, model: 'gemini-flash', ts: '2 min ago' },
-  { id: 2, action: 'Credit Score', worker: 'Emeka Nwosu', result: '724 — Good', model: 'alt-credit-v2', ts: '8 min ago' },
-  { id: 3, action: 'Fraud Detection', worker: 'Unknown', result: 'Low risk (12/100)', model: 'fraud-guard', ts: '15 min ago' },
-  { id: 4, action: 'Proof Verification', worker: 'Fatima Abubakar', task: 'Delivery Run', score: 88, model: 'gemini-flash', ts: '22 min ago' },
-  { id: 5, action: 'Dispute Analysis', worker: 'Chidi Uchenna', result: 'Resolved — Worker favored', model: 'dispute-ai', ts: '1h ago' },
-]
-
-const FLAGGED = [
-  { id: 101, type: 'Suspicious Proof', worker: 'User #1042', amount: 45000, status: 'Under Review', risk: 'high' },
-  { id: 102, type: 'Double Application', worker: 'User #2187', amount: 18000, status: 'Pending', risk: 'medium' },
-  { id: 103, type: 'Location Mismatch', worker: 'User #0934', amount: 32000, status: 'Resolved', risk: 'low' },
-]
-
-const VERIFY_QUEUE = [
-  { id: 1, name: 'Ngozi Kalu', location: 'Aba, Abia', skills: ['Tailoring', 'Sewing'], joined: '2025-12-08', docs: 'Submitted' },
-  { id: 2, name: 'Ibrahim Musa', location: 'Kano', skills: ['Welding', 'Fabrication'], joined: '2025-12-09', docs: 'Pending' },
-  { id: 3, name: 'Blessing Obi', location: 'Benin City', skills: ['Cleaning', 'Catering'], joined: '2025-12-10', docs: 'Submitted' },
-]
+import { Badge } from '../components/ui/badge'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
+import { Progress } from '../components/ui/progress'
 
 const riskBadge: Record<string, string> = {
-  high: 'bg-red-100 text-red-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-emerald-100 text-emerald-700',
+  high: 'bg-red-50 text-red-700 border-red-100',
+  medium: 'bg-yellow-50 text-yellow-700 border-yellow-100',
+  low: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 }
 
 export default function Admin() {
   const { addToast } = useApp()
-  const { workers } = useWorkers()
-  const { tasks } = useTasks()
-  const [activeTab, setActiveTab] = useState<'overview' | 'verify' | 'disputes' | 'ai'>('overview')
+  const { data: dashboardStats, isLoading: loadingStats } = useAdminDashboard()
+  const { data: adminTasks, isLoading: loadingTasks } = useAdminTasks({ limit: 10 })
+  const { data: adminWorkers, isLoading: loadingWorkers } = useAdminWorkers({ limit: 10 })
+  const { data: kycSubmissions, isLoading: loadingKYC } = useAdminKYCSubmissions('pending')
+  const { data: aiLogs, isLoading: loadingLogs } = useAdminAILogs(10)
+  
+  const [activeTab, setActiveTab] = useState('overview')
 
-  const openTasks = tasks.filter((t) => t.status === 'posted').length
-  const disputedTasks = tasks.filter((t) => ['disputed', 'complaint_filed', 'flagged_for_dispute'].includes(t.status)).length
-  const totalWorkers = workers.length || kpiMetrics.totalWorkers
+  const isLoading = loadingStats || loadingTasks || loadingWorkers || loadingKYC || loadingLogs
+
+  if (isLoading) {
+    return <div className="p-10 text-center font-black text-slate-400 uppercase tracking-widest">Loading Platform Intelligence...</div>
+  }
+
+  const stats = [
+    { label: 'Total Workers', value: dashboardStats?.total_workers || 0, icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-50', trend: '+12%' },
+    { label: 'Open Services', value: dashboardStats?.open_tasks || 0, icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-50', trend: '+5%' },
+    { label: 'Flagged Actions', value: dashboardStats?.flagged_tasks || 0, icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-50', trend: 'Action needed' },
+    { label: 'Disputed Services', value: dashboardStats?.disputed_tasks || 0, icon: Scale, color: 'text-orange-500', bg: 'bg-orange-50', trend: 'Review queue' },
+  ]
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-      {/* Header */}
-      <section className="pt-16 pb-10 bg-gradient-to-b from-navy-950 to-navy-900 text-white">
-        <div className="page-container">
-          <span className="badge bg-red-500/20 border border-red-400/30 text-red-300 mb-4">Admin Console</span>
-          <h1 className="text-4xl font-black mb-2">Ecosystem Control<br /><span className="text-emerald-400">Center</span></h1>
-          <p className="text-slate-400">Verify accounts, resolve disputes, monitor AI decisions, and track ecosystem KPIs.</p>
+    <div className="pt-24 pb-20 bg-slate-50 min-h-screen">
+      <div className="page-container">
+        {/* Page Header */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-black text-navy-900 tracking-tight leading-tight mb-2">
+            Platform Administration
+          </h1>
+          <p className="text-slate-400 text-sm font-medium">
+            Monitor ecosystem health, verify participants, and manage system-wide intelligence.
+          </p>
         </div>
-      </section>
 
-      {/* KPI Row */}
-      <section className="bg-white border-b border-slate-100 py-6">
-        <div className="page-container grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Workers', value: totalWorkers.toLocaleString(), icon: '👷', trend: '+12%' },
-            { label: 'Open Tasks', value: openTasks || 12, icon: '📋', trend: '+5%' },
-            { label: 'Flagged Transactions', value: FLAGGED.filter((f) => f.status !== 'Resolved').length, icon: '🚨', trend: 'Action needed' },
-            { label: 'Disputed Tasks', value: disputedTasks || 3, icon: '⚖️', trend: 'Review queue' },
-          ].map((kpi, i) => (
-            <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              className="card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-lg">{kpi.icon}</span>
-                <span className="text-xs text-slate-400 font-medium">{kpi.trend}</span>
-              </div>
-              <div className="text-2xl font-black text-navy-900">{kpi.value}</div>
-              <div className="text-xs text-slate-400 font-medium mt-0.5">{kpi.label}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Tabs */}
-      <section className="bg-white border-b border-slate-100 sticky top-16 z-30">
-        <div className="page-container">
-          <div className="flex gap-1 py-3 overflow-x-auto scrollbar-hide">
-            {(['overview', 'verify', 'disputes', 'ai'] as const).map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap capitalize ${activeTab === tab ? 'bg-navy-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
-                {tab === 'ai' ? 'AI Decision Logs' : tab === 'verify' ? 'Verify Accounts' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
+        <div className="space-y-10">
+          {/* KPI Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((kpi, i) => (
+              <Card key={kpi.label} className="border-none shadow-xl shadow-navy-100/20 rounded-[2rem] overflow-hidden h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-10 h-10 rounded-xl ${kpi.bg} flex items-center justify-center`}>
+                      <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg">{kpi.trend}</span>
+                  </div>
+                  <div className="text-3xl font-black text-navy-900 tracking-tight">{kpi.value}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{kpi.label}</div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
-      </section>
 
-      <section className="py-10">
-        <div className="page-container">
-          {/* OVERVIEW */}
-          {activeTab === 'overview' && (
-            <div className="grid lg:grid-cols-2 gap-8">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
-                <h3 className="font-bold text-navy-900 mb-4">Recent Tasks</h3>
-                <div className="space-y-3">
-                  {tasks.slice(0, 6).map((t) => {
-                    const sc = statusConfig[t.status] ?? { label: t.status, bg: 'bg-slate-100', text: 'text-slate-600' }
-                    return (
-                      <div key={t.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-navy-900 truncate">{t.title}</div>
-                          <div className="text-xs text-slate-400">{t.task_location} · {formatNaira(t.amount_naira)}</div>
+          <Tabs defaultValue="overview" onValueChange={setActiveTab} className="w-full">
+            <TabsList className="bg-white p-1 rounded-2xl shadow-xl shadow-navy-100/30 mb-10 h-12 w-full max-w-xl mx-auto flex overflow-hidden">
+              <TabsTrigger value="overview" className="flex-1 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] data-[state=active]:bg-navy-900 data-[state=active]:text-white transition-all">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="verify" className="flex-1 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] data-[state=active]:bg-navy-900 data-[state=active]:text-white transition-all">
+                Verify
+              </TabsTrigger>
+              <TabsTrigger value="disputes" className="flex-1 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] data-[state=active]:bg-navy-900 data-[state=active]:text-white transition-all">
+                Disputes
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex-1 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] data-[state=active]:bg-navy-900 data-[state=active]:text-white transition-all">
+                AI Logs
+              </TabsTrigger>
+            </TabsList>
+
+            <AnimatePresence mode="wait">
+              <TabsContent value="overview">
+                <div className="grid lg:grid-cols-2 gap-8">
+                  <Card className="border-none shadow-2xl shadow-navy-100/40 rounded-[2.5rem] bg-white overflow-hidden">
+                    <CardHeader className="p-8 pb-4">
+                      <CardTitle className="font-black text-navy-900 text-xl tracking-tight flex items-center gap-3">
+                        <Briefcase className="w-6 h-6 text-blue-500" /> Recent Activity
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-2">
+                      {adminTasks?.slice(0, 6).map((t: any) => {
+                        const sc = statusConfig[t.status] ?? { label: t.status, bg: 'bg-slate-100', text: 'text-slate-600' }
+                        return (
+                          <div key={t.id} className="flex items-center justify-between py-4 border-b border-slate-50 last:border-0 group cursor-pointer hover:px-2 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-black text-navy-900 group-hover:text-blue-600 transition-colors">{t.title}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <MapPin className="w-3 h-3 text-slate-300" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.task_location} · {formatNaira(t.amount_naira)}</span>
+                              </div>
+                            </div>
+                            <Badge className={`${sc.bg} ${sc.text} border-none font-black text-[9px] uppercase tracking-widest px-2 py-0.5`}>{sc.label}</Badge>
+                          </div>
+                        )
+                      })}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-none shadow-2xl shadow-navy-100/40 rounded-[2.5rem] bg-white overflow-hidden">
+                    <CardHeader className="p-8 pb-4">
+                      <CardTitle className="font-black text-navy-900 text-xl tracking-tight flex items-center gap-3">
+                        <Users className="w-6 h-6 text-emerald-500" /> Worker Overview
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-2">
+                      {adminWorkers?.slice(0, 6).map((w: any) => (
+                        <div key={w.id} className="flex items-center gap-4 py-4 border-b border-slate-50 last:border-0 group cursor-pointer hover:px-2 transition-all">
+                          <Avatar className="w-10 h-10 rounded-xl border-2 border-slate-50">
+                            <AvatarFallback className="bg-emerald-50 text-emerald-700 font-black text-xs">{getInitials(w.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-black text-navy-900 group-hover:text-emerald-600 transition-colors">{w.name}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score: {w.trust_score} · {w.primary_location}</span>
+                            </div>
+                          </div>
+                          <div className={`w-2 h-2 rounded-full ${w.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
                         </div>
-                        <span className={`badge ml-3 flex-shrink-0 ${sc.bg} ${sc.text}`}>{sc.label}</span>
-                      </div>
-                    )
-                  })}
-                  {tasks.length === 0 && <p className="text-sm text-slate-400 text-center py-6">Fetching tasks from API…</p>}
+                      ))}
+                    </CardContent>
+                  </Card>
                 </div>
-              </motion.div>
+              </TabsContent>
 
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-6">
-                <h3 className="font-bold text-navy-900 mb-4">Worker Overview</h3>
-                <div className="space-y-3">
-                  {workers.slice(0, 6).map((w) => (
-                    <div key={w.id} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {getInitials(w.name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-navy-900 truncate">{w.name}</div>
-                        <div className="text-xs text-slate-400">{w.primary_location} · Score: {w.trust_score}</div>
-                      </div>
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${w.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    </div>
-                  ))}
-                  {workers.length === 0 && <p className="text-sm text-slate-400 text-center py-6">Fetching workers from API…</p>}
-                </div>
-              </motion.div>
-            </div>
-          )}
-
-          {/* VERIFY ACCOUNTS */}
-          {activeTab === 'verify' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-bold text-navy-900">Account Verification Queue</h3>
-                <span className="badge bg-yellow-100 text-yellow-700">{VERIFY_QUEUE.filter(q => q.docs === 'Submitted').length} pending</span>
-              </div>
-              <div className="divide-y divide-slate-50">
-                {VERIFY_QUEUE.map((item, i) => (
-                  <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.1 }}
-                    className="px-6 py-4 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {getInitials(item.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-navy-900 text-sm">{item.name}</div>
-                      <div className="text-xs text-slate-400">{item.location} · Joined {formatDate(item.joined)}</div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.skills.map((s) => <span key={s} className="badge bg-slate-100 text-slate-600 text-[10px]">{s}</span>)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`badge text-xs ${item.docs === 'Submitted' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
-                        Docs: {item.docs}
-                      </span>
-                      {item.docs === 'Submitted' && (
-                        <>
-                          <button onClick={() => addToast(`${item.name} verified successfully!`, 'success')}
-                            className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-semibold hover:bg-emerald-600 transition-colors">
-                            Approve
-                          </button>
-                          <button onClick={() => addToast(`${item.name} verification rejected.`, 'error')}
-                            className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-200 transition-colors">
-                            Reject
-                          </button>
-                        </>
+              <TabsContent value="verify">
+                <Card className="border-none shadow-2xl shadow-navy-100/40 rounded-[2.5rem] bg-white overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-slate-50">
+                      {kycSubmissions?.map((item: any) => (
+                        <div key={item.id} className="p-8 flex items-center gap-6 hover:bg-slate-50/50 transition-colors">
+                          <Avatar className="w-14 h-14 rounded-2xl border-2 border-slate-100">
+                            <AvatarFallback className="bg-blue-50 text-blue-700 font-black text-lg">{getInitials(item.worker_name || 'User')}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-black text-navy-900 text-lg mb-1">{item.worker_name || 'Worker'}</div>
+                            <div className="flex items-center gap-3 text-slate-400">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">{item.city}, {item.state} · Submitted {formatDate(item.submitted_at)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-2">
+                              <Button size="icon" className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white" onClick={() => addToast(`Review initiated`, 'info')}>
+                                <CheckCircle2 className="w-5 h-5" />
+                              </Button>
+                              <Button size="icon" variant="outline" className="w-11 h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50" onClick={() => addToast(`Review initiated`, 'info')}>
+                                <XCircle className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {kycSubmissions?.length === 0 && (
+                        <div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No pending KYC submissions</div>
                       )}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          {/* DISPUTES */}
-          {activeTab === 'disputes' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
-                <h3 className="font-bold text-navy-900">Flagged Transactions</h3>
-              </div>
-              <div className="divide-y divide-slate-50">
-                {FLAGGED.map((item, i) => (
-                  <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.1 }}
-                    className="px-6 py-4 flex items-center gap-4 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-navy-900 text-sm">#{item.id} — {item.type}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{item.worker} · {formatNaira(item.amount)}</div>
+              <TabsContent value="disputes">
+                <Card className="border-none shadow-2xl shadow-navy-100/40 rounded-[2.5rem] bg-white overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-slate-50">
+                      {adminTasks?.filter((t: any) => ['disputed', 'flagged_for_dispute'].includes(t.status)).map((item: any) => (
+                        <div key={item.id} className="p-8 flex items-center gap-6 hover:bg-slate-50/50 transition-colors">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-red-50 text-red-700 border-red-100 border`}>
+                            <AlertTriangle className="w-7 h-7" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-black text-navy-900 text-lg">Task #{item.id}: {item.title}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {item.status} · Amount: {formatNaira(item.amount_naira)}</div>
+                          </div>
+                          <Button className="h-12 px-6 rounded-2xl bg-navy-900 text-white font-black text-xs uppercase tracking-widest shadow-lg" onClick={() => addToast(`Opening dispute case...`, 'info')}>
+                            Review
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <span className={`badge text-xs ${riskBadge[item.risk]}`}>
-                      {item.risk.charAt(0).toUpperCase() + item.risk.slice(1)} Risk
-                    </span>
-                    <span className={`badge text-xs ${item.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {item.status}
-                    </span>
-                    {item.status !== 'Resolved' && (
-                      <button onClick={() => addToast(`Dispute #${item.id} resolved.`, 'success')}
-                        className="px-3 py-1.5 bg-navy-900 text-white rounded-lg text-xs font-semibold hover:bg-navy-800 transition-colors">
-                        Resolve
-                      </button>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          {/* AI LOGS */}
-          {activeTab === 'ai' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <h3 className="font-bold text-navy-900">AI Decision Synthesis Logs</h3>
-              </div>
-              <div className="divide-y divide-slate-50">
-                {AI_LOGS.map((log, i) => (
-                  <motion.div key={log.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.08 }}
-                    className="px-6 py-4 flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">AI</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-navy-900 text-sm">{log.action}</div>
-                      <div className="text-xs text-slate-400">
-                        {log.worker}{log.task ? ` → "${log.task}"` : ''}
-                        {log.score !== undefined ? ` · Confidence: ${log.score}%` : ''}
-                        {log.result ? ` · ${log.result}` : ''}
-                      </div>
+              <TabsContent value="ai">
+                <Card className="border-none shadow-2xl shadow-navy-100/40 rounded-[2.5rem] bg-slate-900 text-white overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-white/5">
+                      {aiLogs?.map((log: any) => (
+                        <div key={log.id} className="p-8 flex items-center gap-6 hover:bg-white/5 transition-colors group">
+                          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
+                            <BrainCircuit className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-black text-white text-lg leading-tight mb-1">{log.event_type}</div>
+                            <div className="text-[11px] text-slate-400 font-medium">Task ID: {log.task_id} | Result: {log.decision_synthesis}</div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className="bg-white/10 text-white/60 border-none font-black text-[8px] uppercase tracking-widest">GEMINI-3-FLASH</Badge>
+                            <div className="text-[10px] font-bold text-slate-500 uppercase mt-1">{new Date(log.created_at).toLocaleTimeString()}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className="badge bg-violet-100 text-violet-700 text-[10px]">{log.model}</span>
-                      <span className="text-[10px] text-slate-400">{log.ts}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </AnimatePresence>
+          </Tabs>
         </div>
-      </section>
-    </motion.div>
+      </div>
+    </div>
   )
 }
