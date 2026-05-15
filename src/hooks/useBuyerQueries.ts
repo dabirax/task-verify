@@ -26,11 +26,11 @@ export function useBuyerDisputes() {
   });
 }
 
-export function useDisputeWindow(id: number) {
+export function useDisputeWindow(id: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['buyer', 'dispute-window', id],
     queryFn: () => buyerApi.getDisputeWindow(id),
-    enabled: !!id,
+    enabled: !!id && (options?.enabled ?? true),
     refetchInterval: 30_000,
   });
 }

@@ -4,13 +4,14 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
-import { useWorkerProfile, useCreateWorkerProfile, useWorkerKYC } from '../hooks/useWorkerProfileQueries';
+import { useWorkerProfile, useCreateWorkerProfile, useWorkerKYC, useUpdateWorkerProfile } from '../hooks/useWorkerProfileQueries';
+import { workerProfileApi } from '../services/workerProfileApi';
 import KYCModal from '../components/KYCModal';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { getInitials, trustScoreLabel } from '../utils/formatters';
+import { getInitials, trustScoreLabel, getSkillColor } from '../utils/formatters';
 import { ShieldCheck, User as UserIcon, Mail, MapPin, Edit2, Loader2, Save, X } from 'lucide-react';
 
 export default function Profile() {
@@ -22,7 +23,9 @@ export default function Profile() {
     name: '',
     bio: '',
     primary_location: '',
+    skills: [] as string[],
   });
+  const [tempSkill, setTempSkill] = useState('');
 
   const { data: workerProfile, isLoading: loadingProfile } = useWorkerProfile({ 
     enabled: user?.role === 'worker',
@@ -34,17 +37,7 @@ export default function Profile() {
   
   const [showKYC, setShowKYC] = useState(false);
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => api.updateWorkerProfileMe(data),
-    onSuccess: () => {
-      addToast('Profile updated successfully!', 'success');
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['workerProfileMe'] });
-    },
-    onError: (err: any) => {
-      addToast(err.message || 'Failed to update profile', 'error');
-    },
-  });
+  const updateMutation = useUpdateWorkerProfile();
 
   const handleEditClick = () => {
     if (workerProfile) {
@@ -52,13 +45,27 @@ export default function Profile() {
         name: workerProfile.name || '',
         bio: workerProfile.bio || '',
         primary_location: workerProfile.primary_location || '',
+        skills: workerProfile.skills || [],
       });
     }
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    updateMutation.mutate(editForm);
+    updateMutation.mutate(editForm, {
+      onSuccess: (data: any) => {
+        addToast('Profile updated successfully!', 'success');
+        setIsEditing(false);
+        queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
+        // update auth user if name changed
+        if (user) {
+          setUser({ ...user, full_name: data.name || user.full_name });
+        }
+      },
+      onError: (err: any) => {
+        addToast(err.message || 'Failed to update profile', 'error');
+      }
+    });
   };
 
   if (loadingProfile) {
@@ -75,6 +82,7 @@ export default function Profile() {
         name: editForm.name || user?.full_name || '',
         primary_location: editForm.primary_location || 'Lagos, Nigeria',
         bio: editForm.bio || '',
+        skills: editForm.skills || [],
       },
       {
         onSuccess: (response: any) => {
@@ -83,6 +91,14 @@ export default function Profile() {
             setUser({ ...user, worker_id: response.worker.id });
           }
           queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
+          // If user added skills while creating, update the profile with skills via PATCH
+          if (editForm.skills && editForm.skills.length > 0) {
+            workerProfileApi.updateProfile({ skills: editForm.skills }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
+            }).catch((err) => {
+              addToast(err.message || 'Failed to save skills', 'error');
+            });
+          }
         },
         onError: (err: any) => {
           addToast(err.message || 'Failed to create profile', 'error');
@@ -163,6 +179,36 @@ export default function Profile() {
                   placeholder="Describe your skills and experience..."
                 />
               </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Skills</label>
+                <div className="flex gap-2 flex-wrap mb-3">
+                  {editForm.skills?.map((s) => (
+                    <Badge key={s} className="flex items-center gap-2 px-3 py-1 rounded-full">
+                      <span className="uppercase font-black text-xs">{s}</span>
+                      <button type="button" onClick={() => setEditForm(prev => ({ ...prev, skills: prev.skills.filter(sk => sk !== s) }))} className="text-slate-400 hover:text-slate-600">✕</button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input value={tempSkill} onChange={(e) => setTempSkill(e.target.value)} placeholder="Add a skill and press Enter or Add" onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tempSkill.trim()) {
+                      e.preventDefault();
+                      if (!editForm.skills.includes(tempSkill.trim())) {
+                        setEditForm(prev => ({ ...prev, skills: [...prev.skills, tempSkill.trim()] }));
+                      }
+                      setTempSkill('');
+                    }
+                  }} />
+                  <Button onClick={() => {
+                    if (tempSkill.trim()) {
+                      if (!editForm.skills.includes(tempSkill.trim())) {
+                        setEditForm(prev => ({ ...prev, skills: [...prev.skills, tempSkill.trim()] }));
+                      }
+                      setTempSkill('');
+                    }
+                  }}>Add</Button>
+                </div>
+              </div>
               <Button 
                 onClick={handleCreateProfile} 
                 disabled={createMutation.isPending || !editForm.primary_location}
@@ -191,6 +237,53 @@ export default function Profile() {
                 </p>
               )}
             </div>
+
+              <div className="mt-4">
+                <h3 className="text-sm font-black text-navy-900 uppercase tracking-widest mb-3">Skills</h3>
+                {isEditing ? (
+                  <div>
+                    <div className="flex gap-2 flex-wrap mb-3">
+                      {editForm.skills?.map((s) => (
+                        <Badge key={s} className="flex items-center gap-2 px-3 py-1 rounded-full">
+                          <span className="uppercase font-black text-xs">{s}</span>
+                          <button type="button" onClick={() => setEditForm(prev => ({ ...prev, skills: prev.skills.filter(sk => sk !== s) }))} className="text-slate-400 hover:text-slate-600">✕</button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={tempSkill} onChange={(e) => setTempSkill(e.target.value)} placeholder="Add a skill and press Enter or Add" onKeyDown={(e) => {
+                        if (e.key === 'Enter' && tempSkill.trim()) {
+                          e.preventDefault();
+                          if (!editForm.skills.includes(tempSkill.trim())) {
+                            setEditForm(prev => ({ ...prev, skills: [...prev.skills, tempSkill.trim()] }));
+                          }
+                          setTempSkill('');
+                        }
+                      }} />
+                      <Button onClick={() => {
+                        if (tempSkill.trim()) {
+                          if (!editForm.skills.includes(tempSkill.trim())) {
+                            setEditForm(prev => ({ ...prev, skills: [...prev.skills, tempSkill.trim()] }));
+                          }
+                          setTempSkill('');
+                        }
+                      }}>Add</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {workerProfile.skills && workerProfile.skills.length > 0 ? (
+                      workerProfile.skills.map((s: string) => (
+                        <Badge key={s} variant="outline" className={`font-black uppercase tracking-widest border-none px-3 py-1 ${getSkillColor(s)}`}>
+                          {s}
+                        </Badge>
+                      ))
+                    ) : (
+                      <div className="text-slate-500">No skills added yet.</div>
+                    )}
+                  </div>
+                )}
+              </div>
 
             <div className="grid md:grid-cols-2 gap-8">
               <div>

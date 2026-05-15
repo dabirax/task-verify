@@ -15,6 +15,7 @@ import Workers from './pages/Workers'
 import WorkerDetails from './pages/WorkerDetails'
 import Profile from './pages/Profile'
 import Notifications from './pages/Notifications'
+import Inbox from './pages/Inbox'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useAuth } from './hooks/useAuth'
 
@@ -92,6 +93,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inbox"
+              element={
+                <ProtectedRoute>
+                  <Inbox />
                 </ProtectedRoute>
               }
             />

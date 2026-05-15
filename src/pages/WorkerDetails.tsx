@@ -6,11 +6,16 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { getInitials, getSkillColor, trustScoreLabel, formatRating, formatPercent, formatNaira } from '../utils/formatters';
-import { MapPin, ArrowLeft, Loader2, Star, ShieldCheck, CheckCircle2, TrendingUp } from 'lucide-react';
+import { MapPin, ArrowLeft, Loader2, Star, ShieldCheck, CheckCircle2, TrendingUp, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { QuickMessageModal } from '../components/QuickMessageModal';
+import { useAuth } from '../hooks/useAuth';
 
 export default function WorkerDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   const { data: worker, isLoading: workerLoading } = useQuery({
     queryKey: ['workers', Number(id)],
@@ -136,8 +141,28 @@ export default function WorkerDetails() {
                 </div>
               </div>
             </div>
+
+            {user?.role === 'buyer' && (
+              <Button 
+                onClick={() => setShowMessageModal(true)}
+                className="w-full mt-6 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-xl shadow-md"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Message Worker
+              </Button>
+            )}
           </div>
         </div>
+
+        {showMessageModal && (
+          <QuickMessageModal
+            isOpen={showMessageModal}
+            onClose={() => setShowMessageModal(false)}
+            recipientUserId={worker.id?.toString() || ''}
+            recipientName={worker.name}
+            recipientAvatar={worker.avatar_url}
+          />
+        )}
       </div>
     </motion.div>
   );

@@ -5,11 +5,13 @@ import {
   Clock, 
   Flame, 
   BrainCircuit, 
-  ArrowRight, 
   CheckCircle2,
   Lock,
   Zap,
-  Tag
+  Tag,
+  Pencil,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import type { Task } from '../types';
 import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/formatters';
@@ -22,6 +24,8 @@ import { Progress } from './ui/progress';
 import { useAuth } from '../hooks/useAuth';
 import SubmitProofModal from './SubmitProofModal';
 import { useState } from 'react';
+import { useDeleteTask } from '../hooks/useBuyerQueries';
+import EditTaskModal from './EditTaskModal';
 
 interface TaskCardProps {
   task: Task;
@@ -33,13 +37,18 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
   const { addToast } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [renderTimestamp] = useState(() => Date.now());
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const { mutate: deleteTask, isPending: isDeleting } = useDeleteTask();
 
   const status = statusConfig[task.status] ?? { label: task.status, bg: 'bg-slate-100', text: 'text-slate-600' };
   const isOpen = task.status === 'posted';
   const isAssignedToMe = task.assigned_worker_id === user?.worker_id && task.status === 'assigned';
-  const isWorker = user?.role === 'worker';
-  const daysLeft = Math.ceil((new Date(task.due_date).getTime() - Date.now()) / 86400000);
+  const isOwner = String(user?.id) === String(task.buyer_user_id);
+  const canEditTask = isOwner && ['posted', 'open', 'selection_in_progress', 'selected'].includes(task.status);
+  const canDeleteTask = isOwner && ['posted', 'open', 'selection_in_progress'].includes(task.status);
+  const daysLeft = Math.ceil((new Date(task.due_date).getTime() - renderTimestamp) / 86400000);
   const isUrgent = daysLeft <= 3 && daysLeft > 0;
   const isPast = daysLeft <= 0;
 
@@ -98,6 +107,46 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
         </CardHeader>
 
         <CardContent className="p-6 pt-0 flex-1 space-y-6">
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className={`h-9 px-3 rounded-xl border-slate-200 text-slate-700 font-black text-[10px] uppercase tracking-widest ${!canEditTask ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEditModal(true);
+                }}
+                disabled={!canEditTask}
+                title={!canEditTask ? 'Cannot edit once a worker is assigned or task is closed' : 'Edit task'}
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                Edit Task
+              </Button>
+
+              <Button
+                variant="outline"
+                className={`h-9 px-3 rounded-xl ${!canDeleteTask ? 'border-slate-200 text-slate-400 opacity-50 cursor-not-allowed' : 'border-red-200 text-red-600 hover:bg-red-50'} font-black text-[10px] uppercase tracking-widest`}
+                disabled={!canDeleteTask || isDeleting}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const confirmed = window.confirm('Delete this task? This action cannot be undone.');
+                  if (!confirmed) return;
+                  deleteTask(task.id, {
+                    onSuccess: () => addToast('Task deleted successfully', 'success'),
+                    onError: (err: unknown) => {
+                      const message = err instanceof Error ? err.message : 'Failed to delete task';
+                      addToast(message, 'error');
+                    },
+                  });
+                }}
+                title={!canDeleteTask ? 'Cannot delete after selection has progressed' : 'Delete task'}
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Trash2 className="w-3.5 h-3.5 mr-1.5" />}
+                Delete Task
+              </Button>
+            </div>
+          )}
+
           <p className="text-xs text-slate-500 leading-relaxed font-medium line-clamp-3">
             {task.description}
           </p>
@@ -139,7 +188,14 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
               </div>
             </div>
             
-            {isOpen ? (
+            {isOwner ? (
+              <Button 
+                onClick={(e) => { e.stopPropagation(); navigate(`/services/${task.id}`); }}
+                className="h-12 px-6 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-navy-100"
+              >
+                View Task
+              </Button>
+            ) : isOpen ? (
               <Button 
                 onClick={(e) => { e.stopPropagation(); handleApply(); }}
                 className="h-12 px-6 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-navy-100"
@@ -170,6 +226,12 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
         taskId={task.id} 
         isOpen={showSubmitModal} 
         onClose={() => setShowSubmitModal(false)} 
+      />
+
+      <EditTaskModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        task={task}
       />
     </motion.div>
   );
