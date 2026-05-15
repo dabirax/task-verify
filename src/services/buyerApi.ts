@@ -8,6 +8,18 @@ export const buyerApi = {
   getTaskDetail: (id: number) =>
     apiClient<Task>(`/api/v1/buyer/tasks/${id}`),
 
+  createTask: (data: any) =>
+    apiClient<{ task: Task; matches: any[] }>('/api/v1/buyer/tasks', {
+      method: 'POST',
+      body: data,
+    }),
+
+  createTaskMultipart: (formData: FormData) =>
+    apiClient<{ task: Task; matches: any[] }>('/api/v1/buyer/tasks', {
+      method: 'POST',
+      body: formData,
+    }),
+
   assignWorker: (id: number, worker_id: number) =>
     apiClient<{ task: Task; escrow: EscrowAccount }>(`/api/v1/buyer/tasks/${id}/assign`, {
       method: 'POST',

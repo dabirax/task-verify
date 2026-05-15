@@ -57,6 +57,20 @@ export const api = {
       body: formData,
     }),
 
+  updateTask: (id: number, data: Partial<CreateTaskPayload> | FormData) =>
+    apiClient<{ task: Task; message: string }>(`/api/v1/tasks/${id}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+
+  deleteTask: (id: number) =>
+    apiClient<void>(`/api/v1/tasks/${id}`, { method: 'DELETE' }),
+
+  recommendWorkers: (id: number) =>
+    apiClient<{ task: Task; matches: WorkerMatch[]; message: string }>(`/api/v1/tasks/${id}/recommend-workers`, {
+      method: 'POST',
+    }),
+
   getTaskStatus: (id: number) =>
     apiClient<{
       id: number;
@@ -149,6 +163,13 @@ export const api = {
   // ─── Worker Profile (Authenticated) ──────────────────────────────────────────
   getWorkerProfileMe: () =>
     apiClient<Worker>('/api/v1/worker-profile/me'),
+
+  createWorkerProfileMe: (data: {
+    name: string;
+    primary_location: string;
+    bio?: string;
+  }) =>
+    apiClient<Worker>('/api/v1/worker-profile/create', { method: 'POST', body: data }),
 
   updateWorkerProfileMe: (data: Partial<Worker>) =>
     apiClient<Worker>('/api/v1/worker-profile/me', { method: 'PUT', body: data }),

@@ -104,7 +104,7 @@ export default function TaskCard({ task, topMatch, onApply }: TaskCardProps) {
 
           <div className="flex flex-wrap gap-1.5">
             <Tag className="w-3 h-3 text-slate-300 self-center" />
-            {task.required_skills.map((skill) => (
+            {(task.required_skills || []).map((skill) => (
               <Badge key={skill} variant="outline" className={`text-[9px] font-black uppercase tracking-widest border-none ${getSkillColor(skill)}`}>
                 {skill}
               </Badge>

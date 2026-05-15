@@ -1,9 +1,11 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../hooks/useAuth';
+import { useAssignWorker, useRecommendWorkers, useApplyForTask } from '../hooks/useBuyerQueries';
+import { useRequestFundRelease } from '../hooks/useWorkerProfileQueries';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/formatters';
@@ -14,7 +16,9 @@ import { useState } from 'react';
 export default function TaskDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const matches = location.state?.matches || [];
   const { addToast } = useApp();
   const queryClient = useQueryClient();
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -30,16 +34,12 @@ export default function TaskDetails() {
     queryFn: () => api.getWorkers(),
   });
 
-  const assignMutation = useMutation({
-    mutationFn: (workerId: number) => api.assignWorker(Number(id), workerId),
-    onSuccess: () => {
-      addToast('Worker assigned successfully! Escrow created.', 'success');
-      queryClient.invalidateQueries({ queryKey: ['tasks', Number(id)] });
-    },
-    onError: (error: any) => {
-      addToast(error.message || 'Failed to assign worker', 'error');
-    },
-  });
+  const assignMutation = useAssignWorker();
+  const recommendMutation = useRecommendWorkers();
+  const applyMutation = useApplyForTask();
+  const requestReleaseMutation = useRequestFundRelease();
+  
+  const displayMatches = matches.length > 0 ? matches : (task?.ai_recommendations || task?.shortlisted_workers || []);
 
   if (taskLoading) {
     return (
@@ -141,42 +141,101 @@ export default function TaskDetails() {
         <div className="flex items-center justify-end border-t border-slate-100 pt-8 mt-8">
           {isOpen && !isOwner && user?.role === 'worker' && (
             <Button 
+              onClick={() => {
+                if (user?.worker_id) {
+                  applyMutation.mutate({ 
+                    taskId: Number(id), 
+                    data: { worker_id: user.worker_id, proposed_price: task.amount_naira, message: "I'm ready to do this job!" } 
+                  });
+                }
+              }}
+              disabled={applyMutation.isPending}
               className="h-14 px-8 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-navy-100"
             >
+              {applyMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
               Apply for Job <Zap className="ml-2 w-5 h-5 text-emerald-400 fill-emerald-400" />
             </Button>
           )}
 
           {isAssignedToMe && (
-            <Button 
-              onClick={() => setShowSubmitModal(true)}
-              className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-emerald-100"
-            >
-              Submit Proof <CheckCircle2 className="ml-2 w-5 h-5" />
-            </Button>
+            <div className="flex gap-4">
+              {task.status === 'completed' && (
+                <Button 
+                  onClick={() => {
+                    const reason = window.prompt("Why are you requesting a manual release?");
+                    if (reason) {
+                      requestReleaseMutation.mutate({ taskId: Number(id), reason });
+                    }
+                  }}
+                  disabled={requestReleaseMutation.isPending}
+                  variant="outline"
+                  className="h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest border-slate-200 text-slate-600"
+                >
+                  {requestReleaseMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                  Request Release
+                </Button>
+              )}
+              <Button 
+                onClick={() => setShowSubmitModal(true)}
+                className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-emerald-100"
+              >
+                Submit Proof <CheckCircle2 className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
-      {isOwner && isOpen && task.shortlisted_workers && task.shortlisted_workers.length > 0 && (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-8 md:p-12">
-          <div className="flex items-center gap-3 mb-8">
-            <BrainCircuit className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-black text-navy-900">AI Shortlisted Workers</h2>
+      {isOwner && isOpen && displayMatches.length > 0 && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-8 md:p-12 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <BrainCircuit className="w-6 h-6 text-blue-600" />
+              <h2 className="text-2xl font-black text-navy-900">AI Potential Matches</h2>
+            </div>
+            <Button 
+              onClick={() => recommendMutation.mutate(Number(id))}
+              disabled={recommendMutation.isPending}
+              variant="outline" 
+              className="rounded-xl font-bold border-slate-200 text-slate-600"
+            >
+              {recommendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2 text-blue-500" />}
+              Refresh Matches
+            </Button>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
-            {task.shortlisted_workers.map((workerId: number) => {
-              const workerInfo = workers.find(w => w.id === workerId);
+            {displayMatches.map((workerOrId: any) => {
+              const isMatchObject = typeof workerOrId === 'object';
+              const workerId = isMatchObject ? workerOrId.worker_id : workerOrId;
+              const workerInfo = isMatchObject ? workerOrId : workers.find(w => w.id === workerId);
+              
               return (
-                <div key={workerId} className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col justify-between">
+                <div key={workerId} className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col justify-between hover:border-blue-200 transition-all hover:shadow-md">
                   <div className="mb-4">
-                    <div className="font-black text-lg text-navy-900">{workerInfo?.name || `Worker #${workerId}`}</div>
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{workerInfo?.primary_location || 'Unknown Location'}</div>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-black text-lg text-navy-900">{workerInfo?.name || `Worker #${workerId}`}</div>
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                          {isMatchObject && workerInfo.distance_km ? `${workerInfo.distance_km}km away` : workerInfo?.primary_location || 'Unknown Location'}
+                        </div>
+                      </div>
+                      {isMatchObject && workerInfo.match_score && (
+                        <Badge className="bg-emerald-100 text-emerald-800 border-none font-black px-3 py-1">
+                          {Math.round(workerInfo.match_score)}% Match
+                        </Badge>
+                      )}
+                    </div>
+                    {isMatchObject && workerInfo.recommendation_reason && (
+                      <p className="text-sm text-slate-600 mt-4 leading-relaxed font-medium bg-white p-3 rounded-xl border border-slate-100">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-blue-500 block mb-1">AI Reason</span>
+                        {workerInfo.recommendation_reason}
+                      </p>
+                    )}
                   </div>
                   <Button 
-                    onClick={() => assignMutation.mutate(workerId)}
+                    onClick={() => assignMutation.mutate({ taskId: Number(id), workerId })}
                     disabled={assignMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-xs h-12 rounded-xl mt-4"
                   >
                     {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     Assign & Create Escrow
@@ -188,10 +247,19 @@ export default function TaskDetails() {
         </div>
       )}
 
-      {isOwner && isOpen && (!task.shortlisted_workers || task.shortlisted_workers.length === 0) && (
-        <div className="bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm p-8 text-center">
-           <h3 className="text-lg font-black text-navy-900 mb-2">Awaiting AI Matching</h3>
-           <p className="text-slate-500 font-medium max-w-md mx-auto">The AI is currently analyzing worker profiles to find the best matches for this task. Shortlisted workers will appear here.</p>
+      {isOwner && isOpen && displayMatches.length === 0 && (
+        <div className="bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm p-8 text-center mb-8">
+           <BrainCircuit className="w-8 h-8 text-slate-300 mx-auto mb-4" />
+           <h3 className="text-lg font-black text-navy-900 mb-2">No Matches Found Yet</h3>
+           <p className="text-slate-500 font-medium max-w-md mx-auto mb-6">The AI is currently analyzing worker profiles to find the best matches for this task. You can trigger a new search.</p>
+           <Button 
+             onClick={() => recommendMutation.mutate(Number(id))}
+             disabled={recommendMutation.isPending}
+             className="bg-navy-900 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-xl"
+           >
+             {recommendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2 text-emerald-400" />}
+             Find Workers
+           </Button>
         </div>
       )}
 

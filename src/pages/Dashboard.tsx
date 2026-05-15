@@ -27,9 +27,10 @@ import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Progress } from '../components/ui/progress';
 import { formatNaira, getInitials } from '../utils/formatters';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useBuyerTasks } from '../hooks/useBuyerQueries';
-import { useWorkerProfile } from '../hooks/useWorkerProfileQueries';
+import { useWorkerProfile, useWorkerTasks } from '../hooks/useWorkerProfileQueries';
+import { useWallet } from '../hooks/useWallet';
 import { SkeletonLoader } from '../components/SkeletonLoader';
 import CreateTaskModal from '../components/CreateTaskModal';
 
@@ -39,13 +40,20 @@ export default function UserDashboard() {
   const isWorker = user?.role === 'worker';
   const isEmployer = user?.role === 'buyer' || user?.role === 'employer';
   const isAdmin = user?.role === 'admin';
+  const navigate = useNavigate();
 
-  const { data: buyerTasks, isLoading: loadingBuyerTasks } = useBuyerTasks();
-  const { data: workerProfile, isLoading: loadingWorkerProfile } = useWorkerProfile();
+  const { data: buyerTasks, isLoading: loadingBuyerTasks } = useBuyerTasks({ enabled: isEmployer });
+  const { data: workerProfile, isLoading: loadingWorkerProfile } = useWorkerProfile({ enabled: isWorker });
+  const { data: workerTasks, isLoading: loadingWorkerTasks } = useWorkerTasks({ enabled: isWorker });
+  const { data: wallet, isLoading: loadingWallet } = useWallet();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const isLoading = loadingBuyerTasks || loadingWorkerProfile;
+  const isLoading = (isEmployer && loadingBuyerTasks) || (isWorker && (loadingWorkerProfile || loadingWorkerTasks)) || loadingWallet;
+
+  const creditScore = workerProfile?.financial_profile?.credit_score ?? workerProfile?.credit_score ?? 0;
+  const creditProgress = Math.min((creditScore / 850) * 100, 100);
+  const recommendedLoan = workerProfile?.financial_profile?.recommended_loan ?? 150000;
 
   const stats = isWorker ? [
     { label: 'Total Earnings', value: formatNaira(workerProfile?.total_earnings || 0), icon: Wallet, color: 'text-emerald-500', bg: 'bg-emerald-50' },
@@ -59,11 +67,12 @@ export default function UserDashboard() {
     { label: 'Success Rate', value: '98%', icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-50' },
   ];
 
-  const recentItems = isWorker ? [
-    { title: 'Home Cleaning - Ikeja', status: 'Completed', date: '2 hours ago', amount: '₦15,000' },
-    { title: 'Delivery - Lekki Phase 1', status: 'In Progress', date: '5 hours ago', amount: '₦3,500' },
-    { title: 'Plumbing Repair - Surulere', status: 'Verified', date: '1 day ago', amount: '₦12,000' },
-  ] : (buyerTasks?.slice(0, 3).map(task => ({
+  const recentItems = isWorker ? (workerTasks?.slice(0, 3).map(task => ({
+    title: task.title,
+    status: task.status,
+    date: new Date(task.created_at).toLocaleDateString(),
+    amount: formatNaira(task.amount_naira)
+  })) || []) : (buyerTasks?.slice(0, 3).map(task => ({
     title: task.title,
     status: task.status,
     date: new Date(task.created_at).toLocaleDateString(),
@@ -99,7 +108,7 @@ export default function UserDashboard() {
                   Verified {user?.role} Identity
                 </Badge>
                 <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-500" /> Trust Score: {user?.trust_score || 750}
+                  <ShieldCheck className="w-3 h-3 text-emerald-500" /> Trust Score: {workerProfile?.trust_score ?? user?.trust_score ?? 750}
                 </span>
               </div>
             </div>
@@ -125,6 +134,25 @@ export default function UserDashboard() {
         {/* Main Overview Content */}
         <div className="mt-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            {isWorker && !user?.worker_id && (
+              <div className="mb-8 bg-amber-50 border border-amber-200 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg shadow-amber-100/50">
+                <div className="flex items-center gap-5 text-amber-900">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xl mb-1">Worker Profile Required</h3>
+                    <p className="text-sm font-bold opacity-80">You need to create a linked worker profile before you can apply for tasks and get paid.</p>
+                  </div>
+                </div>
+                <Link to="/profile" className="w-full md:w-auto">
+                  <Button className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-widest text-xs h-14 px-8 rounded-2xl shadow-xl shadow-amber-200">
+                    Create Profile Now
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               {stats.map((stat, i) => (
@@ -220,7 +248,7 @@ export default function UserDashboard() {
                   <CardContent className="p-8 pt-0 space-y-6">
                     <div className="bg-slate-50 rounded-3xl p-6 text-center">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Available Balance</div>
-                      <div className="text-4xl font-black text-navy-900 tracking-tight">₦32,500</div>
+                      <div className="text-4xl font-black text-navy-900 tracking-tight">{formatNaira(Number(wallet?.balance || 0))}</div>
                       <Link to="/finance">
                         <Button variant="ghost" className="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest gap-2">
                           Open Wallet Hub <ArrowUpRight className="w-3.5 h-3.5" />
@@ -228,16 +256,20 @@ export default function UserDashboard() {
                       </Link>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-navy-900">
-                        <span>Credit Progress</span>
-                        <span className="text-emerald-600">72%</span>
+                    {isWorker && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-navy-900">
+                          <span>Credit Progress</span>
+                          <span className="text-emerald-600">{creditProgress.toFixed(0)}%</span>
+                        </div>
+                        <Progress value={creditProgress} className="h-2 bg-slate-100" />
+                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                          {creditProgress < 100 
+                            ? `You are ${100 - Math.round(creditProgress)}% away from unlocking a ${formatNaira(recommendedLoan)} micro-loan with partner banks.`
+                            : `You are eligible for a ${formatNaira(recommendedLoan)} micro-loan.`}
+                        </p>
                       </div>
-                      <Progress value={72} className="h-2 bg-slate-100" />
-                      <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-                        You are 28% away from unlocking a ₦150,000 micro-loan with partner banks.
-                      </p>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -270,7 +302,13 @@ export default function UserDashboard() {
         </div>
       </div>
       
-      <CreateTaskModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      <CreateTaskModal 
+        isOpen={showCreateModal} 
+        onClose={() => setShowCreateModal(false)} 
+        onCreated={(taskId, matches) => {
+          navigate(`/services/${taskId}`, { state: { matches } });
+        }}
+      />
     </motion.div>
   );
 }
