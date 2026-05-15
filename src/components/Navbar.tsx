@@ -13,6 +13,7 @@ import {
   LogOut, 
   User as UserIcon,
   Bell,
+  MessageCircle,
   Search,
   ChevronDown,
   BrainCircuit,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
+import { useConversations } from '../hooks/useMessages';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -43,8 +45,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { data: notifications } = useNotifications({ limit: 5 });
+  const { data: conversations } = useConversations();
 
   const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0;
+  const unreadMessagesCount = conversations?.reduce((sum, conv) => sum + conv.unread_count, 0) ?? 0;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -76,6 +80,7 @@ export default function Navbar() {
         { to: '/', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/services', label: 'Services', icon: Briefcase },
         { to: '/workers', label: 'Workers', icon: Users },
+        { to: '/inbox', label: 'Messages', icon: MessageCircle },
         { to: '/finance', label: 'Finance', icon: Wallet },
         { to: '/admin', label: 'Admin', icon: ShieldCheck, role: 'admin' },
       ]
@@ -208,6 +213,17 @@ export default function Navbar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 
+                <Link to="/inbox">
+                  <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-navy-900 hover:bg-slate-100">
+                    <MessageCircle className="w-5 h-5" />
+                    {unreadMessagesCount > 0 && (
+                      <Badge className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center p-0 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-full border border-white">
+                        {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="flex items-center gap-3 cursor-pointer pl-2 border-l border-slate-200 group">

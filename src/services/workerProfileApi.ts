@@ -30,6 +30,17 @@ export const workerProfileApi = {
       method: 'POST',
       body: data,
     }),
+  updateProfile: (data: Partial<{
+    name: string;
+    phone?: string;
+    skills?: string[];
+    bio?: string;
+    primary_location?: string;
+    latitude?: number;
+    longitude?: number;
+    avatar_url?: string;
+  }>) =>
+    apiClient<Worker>('/api/v1/worker-profile/me', { method: 'PATCH', body: data }),
 
   // ── Credit Score ──────────────────────────────────────────────────────────
   getCreditScore: () =>

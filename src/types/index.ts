@@ -343,3 +343,48 @@ export interface CreateTaskPayload {
   location_latitude?: number;
   location_longitude?: number;
 }
+
+export interface Message {
+  id: number;
+  sender_user_id: string | number;
+  recipient_user_id: string | number;
+  task_id?: number | null;
+  body: string;
+  is_read: boolean;
+  read_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Conversation {
+  other_user_id: string;
+  other_user_name: string;
+  other_user_avatar?: string | null;
+  task_id?: number | null;
+  last_message?:
+    | string
+    | {
+        id?: number;
+        body?: string;
+        created_at?: string;
+      }
+    | null;
+  last_message_at?: string;
+  unread_count: number;
+  is_sender_last?: boolean;
+}
+
+export interface ConversationHistory {
+  messages: Message[];
+  other_user_id: string;
+  other_user_name: string;
+  other_user_avatar?: string | null;
+  task_id?: number | null;
+}
+
+export interface SendMessagePayload {
+  recipient_user_id?: string;
+  recipient_worker_id?: number;
+  body: string;
+  task_id?: number;
+}

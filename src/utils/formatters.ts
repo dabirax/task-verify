@@ -43,6 +43,8 @@ export const trustScoreLabel = (score: number): { label: string; color: string }
 
 export const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
   posted: { label: 'Open', bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  selection_in_progress: { label: 'Selecting', bg: 'bg-amber-100', text: 'text-amber-700' },
+  selected: { label: 'Worker Selected', bg: 'bg-amber-100', text: 'text-amber-700' },
   assigned: { label: 'Assigned', bg: 'bg-blue-100', text: 'text-blue-700' },
   submitted: { label: 'Under Review', bg: 'bg-yellow-100', text: 'text-yellow-700' },
   verified: { label: 'Verified', bg: 'bg-green-100', text: 'text-green-700' },

@@ -19,6 +19,17 @@ export function useCreateWorkerProfile() {
   });
 }
 
+export function useUpdateWorkerProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => workerProfileApi.updateProfile(data),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
+      queryClient.setQueryData(['worker', 'profile'], data);
+    },
+  });
+}
+
 // ── Credit Score ──────────────────────────────────────────────────────────────
 export function useWorkerCreditScore(options?: { enabled?: boolean }) {
   return useQuery({

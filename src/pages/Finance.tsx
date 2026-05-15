@@ -32,6 +32,7 @@ import { useAuth } from '../hooks/useAuth'
 import LoanModal from '../components/LoanModal'
 import InsuranceModal from '../components/InsuranceModal'
 import KYCModal from '../components/KYCModal'
+import { DisputesSection } from '../components/DisputesSection'
 
 const earningsMock = [
   { month: 'Jul', earnings: 18000 }, { month: 'Aug', earnings: 22000 },
@@ -433,6 +434,15 @@ export default function Finance() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Disputes Section - Visible to both workers and buyers */}
+      <div className="mt-12">
+        <div className="mb-6">
+          <h2 className="text-2xl font-black text-navy-900 tracking-tight mb-2">Active Disputes</h2>
+          <p className="text-slate-400 text-sm font-medium">Review and manage any ongoing disputes</p>
+        </div>
+        <DisputesSection />
       </div>
     </div>
 
