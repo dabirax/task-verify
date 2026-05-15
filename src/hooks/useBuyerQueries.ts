@@ -3,10 +3,11 @@ import { buyerApi } from '../services/buyerApi';
 import { api } from '../services/api';
 import type { CreateTaskPayload } from '../types';
 
-export function useBuyerTasks() {
+export function useBuyerTasks(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['buyer', 'tasks'],
     queryFn: buyerApi.getMyTasks,
+    ...options,
   });
 }
 
@@ -48,10 +49,46 @@ export function useCreateTask() {
 export function useCreateTaskMultipart() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: FormData) => api.createTaskMultipart(formData),
+    mutationFn: (formData: FormData) => buyerApi.createTaskMultipart(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<CreateTaskPayload> | FormData }) =>
+      api.updateTask(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks', id] });
+      queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.deleteTask(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+export function useRecommendWorkers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.recommendWorkers(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks', id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', id] });
     },
   });
 }

@@ -3,10 +3,11 @@ import { workerProfileApi } from '../services/workerProfileApi';
 import type { KYCData, LoanApplication, InsuranceApplication } from '../types';
 
 // ── Profile ──────────────────────────────────────────────────────────────────
-export function useWorkerProfile() {
+export function useWorkerProfile(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['worker', 'profile'],
     queryFn: workerProfileApi.getProfile,
+    ...options,
   });
 }
 
@@ -19,10 +20,11 @@ export function useCreateWorkerProfile() {
 }
 
 // ── Credit Score ──────────────────────────────────────────────────────────────
-export function useWorkerCreditScore() {
+export function useWorkerCreditScore(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['worker', 'credit-score'],
     queryFn: workerProfileApi.getCreditScore,
+    ...options,
   });
 }
 
@@ -75,10 +77,11 @@ export function useApplyForInsurance() {
 }
 
 // ── Worker Tasks ──────────────────────────────────────────────────────────────
-export function useWorkerTasks() {
+export function useWorkerTasks(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['worker', 'tasks'],
     queryFn: workerProfileApi.getMyTasks,
+    ...options,
   });
 }
 

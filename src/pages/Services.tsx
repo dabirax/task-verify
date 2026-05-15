@@ -1,27 +1,12 @@
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { 
   Search, 
-  MapPin, 
-  Briefcase, 
-  TrendingUp, 
-  BrainCircuit, 
-  CheckCircle2, 
-  Banknote,
-  LayoutGrid,
-  ArrowUpDown,
-  ChevronDown,
-  Filter,
-  Flame,
-  Clock
-} from 'lucide-react'
+  TrendingUp} from 'lucide-react'
 import { useTasks } from '../hooks/useTasks'
 import TaskCard from '../components/TaskCard'
 import { SkeletonLoader, ErrorState, EmptyState } from '../components/SkeletonLoader'
-import { statusConfig, formatNaira } from '../utils/formatters'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -29,17 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu"
 
 const STATUS_OPTIONS = ['all', 'posted', 'assigned', 'verified', 'completed', 'disputed']
-const LOCATION_OPTIONS = ['Lagos', 'Abuja', 'Kano', 'Port Harcourt', 'Ibadan', 'Enugu', 'Kaduna']
 
 const MOCK_MATCHES: Record<number, { name: string; score: number }> = {
   1: { name: 'Amaka O.', score: 92 },
@@ -65,7 +41,7 @@ export default function Services() {
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(
-        (t) => t.title.toLowerCase().includes(q) || t.task_location.toLowerCase().includes(q) || t.required_skills.some((s) => s.toLowerCase().includes(q))
+        (t) => t.title.toLowerCase().includes(q) || t.task_location.toLowerCase().includes(q) || (t.required_skills || []).some((s) => s.toLowerCase().includes(q))
       )
     }
     list.sort((a, b) => {

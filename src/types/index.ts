@@ -51,6 +51,20 @@ export interface Worker {
   tier?: string;
   credit_score?: number;
   credit_band?: string;
+  economic_profile?: {
+    risk_level: string;
+    earning_pattern: any[];
+    behavioral_score: number;
+    identity_verified: boolean;
+    reliability_score: number;
+    verification_sources: string[];
+  };
+  financial_profile?: {
+    credit_score: number;
+    loan_eligibility: boolean;
+    recommended_loan: number;
+    insurance_risk_level: string;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -146,9 +160,10 @@ export interface Notification {
 
 export interface Wallet {
   id: number;
-  user_id: number;
-  wallet_type: 'buyer' | 'worker';
-  available_balance: number;
+  owner_id: number;
+  owner_type: 'buyer' | 'worker';
+  balance: string | number;
+  locked_balance: string | number;
   total_earnings?: number | null;
   squad_va_number?: string | null;
   squad_bank_code?: string | null;

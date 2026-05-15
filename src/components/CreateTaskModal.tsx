@@ -13,7 +13,7 @@ import type { WorkerMatch } from '../types';
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated?: (matches: WorkerMatch[]) => void;
+  onCreated?: (taskId: number, matches: WorkerMatch[]) => void;
 }
 
 const NIGERIAN_CITIES = ['Lagos', 'Abuja', 'Kano', 'Port Harcourt', 'Ibadan', 'Enugu', 'Kaduna', 'Onitsha', 'Benin City', 'Aba'];
@@ -55,11 +55,19 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('amount_naira', amount);
+    formData.append('amount_naira', amount.toString());
     formData.append('task_location', location);
     formData.append('due_date', new Date(dueDate).toISOString());
     formData.append('deliverable_spec', deliverableSpec);
-    skills.forEach(s => formData.append('required_skills[]', s));
+    
+    // Explicitly send these if available, though they are not required
+    formData.append('client_name', 'Anonymous');
+    formData.append('client_email', 'client@example.com');
+
+    // For multer, array fields are tricky. If we send a JSON string, the backend might parse it correctly or ignore it without crashing.
+    if (skills.length > 0) {
+      skills.forEach(s => formData.append('required_skills[]', s));
+    }
     if (refImages) {
       for (let i = 0; i < refImages.length; i++) {
         formData.append('deliverable_images', refImages[i]);
@@ -69,7 +77,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
     mutate(formData, {
       onSuccess: (data) => {
         addToast('Task created! AI matched candidates for you.', 'success');
-        onCreated?.(data.matches || []);
+        onCreated?.(data.task.id, data.matches || []);
         onClose();
         resetForm();
       },

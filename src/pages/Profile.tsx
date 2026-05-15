@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
+import { useWorkerProfile, useCreateWorkerProfile, useWorkerKYC } from '../hooks/useWorkerProfileQueries';
+import KYCModal from '../components/KYCModal';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,7 +14,7 @@ import { getInitials, trustScoreLabel } from '../utils/formatters';
 import { ShieldCheck, User as UserIcon, Mail, MapPin, Edit2, Loader2, Save, X } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { addToast } = useApp();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -22,11 +24,15 @@ export default function Profile() {
     primary_location: '',
   });
 
-  const { data: workerProfile, isLoading } = useQuery({
-    queryKey: ['workerProfileMe'],
-    queryFn: () => api.getWorkerProfileMe(),
+  const { data: workerProfile, isLoading: loadingProfile } = useWorkerProfile({ 
     enabled: user?.role === 'worker',
+    retry: false 
   });
+
+  const { data: kycStatus } = useWorkerKYC();
+  const createMutation = useCreateWorkerProfile();
+  
+  const [showKYC, setShowKYC] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => api.updateWorkerProfileMe(data),
@@ -55,7 +61,7 @@ export default function Profile() {
     updateMutation.mutate(editForm);
   };
 
-  if (isLoading) {
+  if (loadingProfile) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
@@ -63,13 +69,35 @@ export default function Profile() {
     );
   }
 
+  const handleCreateProfile = () => {
+    createMutation.mutate(
+      {
+        name: editForm.name || user?.full_name || '',
+        primary_location: editForm.primary_location || 'Lagos, Nigeria',
+        bio: editForm.bio || '',
+      },
+      {
+        onSuccess: (response: any) => {
+          addToast('Worker Profile Created!', 'success');
+          if (user && response?.worker?.id) {
+            setUser({ ...user, worker_id: response.worker.id });
+          }
+          queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
+        },
+        onError: (err: any) => {
+          addToast(err.message || 'Failed to create profile', 'error');
+        }
+      }
+    );
+  };
+
   const avatarBg = 'bg-blue-50 text-blue-700';
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page-container pt-32 pb-12 max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-black text-navy-900">My Profile</h1>
-        {user?.role === 'worker' && !isEditing && (
+        {user?.role === 'worker' && workerProfile && !isEditing && (
           <Button onClick={handleEditClick} variant="outline" className="rounded-xl">
             <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
           </Button>
@@ -101,6 +129,50 @@ export default function Profile() {
              </div>
           </div>
         </div>
+
+        {user?.role === 'worker' && !workerProfile && (
+          <div className="p-8 space-y-6">
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl mb-6">
+              <h3 className="font-black text-amber-900 text-lg mb-2">Create Your Worker Profile</h3>
+              <p className="text-amber-800 text-sm font-medium">To apply for tasks and receive payouts, you must complete your worker profile.</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Full Name</label>
+                <Input 
+                  value={editForm.name || user?.full_name || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Your full name"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Primary Location</label>
+                <Input 
+                  value={editForm.primary_location}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, primary_location: e.target.value }))}
+                  placeholder="e.g. Ikeja, Lagos"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1 block">Bio / Expertise</label>
+                <textarea 
+                  className="w-full rounded-xl border-slate-200 p-3 text-sm font-medium focus:border-emerald-500 focus:ring-emerald-500 resize-none h-24"
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Describe your skills and experience..."
+                />
+              </div>
+              <Button 
+                onClick={handleCreateProfile} 
+                disabled={createMutation.isPending || !editForm.primary_location}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest h-14 rounded-xl"
+              >
+                {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create & Link Profile'}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {user?.role === 'worker' && workerProfile && (
           <div className="p-8 space-y-8">
@@ -160,11 +232,38 @@ export default function Profile() {
                 <div className="absolute top-0 right-0 opacity-10 w-32 h-32 transform translate-x-8 -translate-y-8">
                   <ShieldCheck className="w-full h-full" />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">Trust Identity</h3>
-                <div className="flex items-end gap-3">
-                  <div className="text-4xl font-black">{workerProfile.trust_score}</div>
-                  <div className="text-sm font-bold text-slate-300 pb-1">{trustScoreLabel(workerProfile.trust_score).label} Tier</div>
+                <div className="flex justify-between items-start mb-2 relative z-10">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400">Trust Identity</h3>
+                  {workerProfile.tier && (
+                    <Badge className="bg-white/10 text-white border-none font-black text-[10px] uppercase tracking-widest">{workerProfile.tier} Tier</Badge>
+                  )}
                 </div>
+                <div className="flex items-end gap-3 mb-6 relative z-10">
+                  <div className="text-4xl font-black">{workerProfile.trust_score}</div>
+                  <div className="text-sm font-bold text-slate-300 pb-1">Points</div>
+                </div>
+
+                {workerProfile.economic_profile && (
+                  <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10 relative z-10">
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Economic Risk</div>
+                      <div className="text-sm font-bold capitalize">{workerProfile.economic_profile.risk_level}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Reliability Score</div>
+                      <div className="text-sm font-bold">{workerProfile.economic_profile.reliability_score}/100</div>
+                    </div>
+                  </div>
+                )}
+                
+                {kycStatus?.status !== 'approved' && (
+                  <Button 
+                    onClick={() => setShowKYC(true)}
+                    className="mt-6 bg-white text-navy-950 hover:bg-slate-100 font-black text-xs uppercase tracking-widest px-6 h-10 rounded-xl"
+                  >
+                    Complete National KYC <ShieldCheck className="ml-2 w-4 h-4 text-emerald-500" />
+                  </Button>
+                )}
               </div>
             )}
 
@@ -191,6 +290,8 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      <KYCModal isOpen={showKYC} onClose={() => setShowKYC(false)} />
     </motion.div>
   );
 }
