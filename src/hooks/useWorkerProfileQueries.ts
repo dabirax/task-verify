@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workerProfileApi } from '../services/workerProfileApi';
-import type { KYCData, LoanApplication, InsuranceApplication } from '../types';
+import type { Worker, KYCData, LoanApplication, InsuranceApplication } from '../types';
 
 // ── Profile ──────────────────────────────────────────────────────────────────
-export function useWorkerProfile(options?: { enabled?: boolean }) {
+export function useWorkerProfile(options?: { enabled?: boolean; retry?: boolean | number | ((failureCount: number, error: any) => boolean) }) {
   return useQuery({
     queryKey: ['worker', 'profile'],
     queryFn: workerProfileApi.getProfile,

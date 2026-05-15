@@ -158,7 +158,7 @@ export default function UserDashboard() {
               {stats.map((stat, i) => (
                 <Card key={stat.label} className="border-none shadow-xl shadow-navy-100/20 rounded-[2rem] overflow-hidden group hover:scale-105 transition-all cursor-pointer bg-white">
                   <CardContent className="p-6">
-                    <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
+                    <div className={`w-10 h-10 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
                       <stat.icon className={`w-6 h-6 ${stat.color}`} />
                     </div>
                     <div className="text-3xl font-black text-navy-900 tracking-tight">{stat.value}</div>

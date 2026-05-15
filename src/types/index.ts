@@ -112,6 +112,7 @@ export interface Task {
   deliverable_spec?: DeliverableSpec | null;
   buyer_user_id?: number | null;
   shortlisted_workers?: number[];
+  ai_recommendations?: any[];
   selected_worker_id?: number | null;
   assigned_worker_id?: number | null;
   buyer_confirmed?: boolean;
