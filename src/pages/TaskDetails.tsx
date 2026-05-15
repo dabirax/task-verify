@@ -9,8 +9,9 @@ import { useRequestFundRelease } from '../hooks/useWorkerProfileQueries';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/formatters';
-import { MapPin, Calendar, Clock, Lock, CheckCircle2, Zap, ArrowLeft, Loader2, BrainCircuit } from 'lucide-react';
+import { MapPin, Calendar, Clock, Lock, CheckCircle2, Zap, ArrowLeft, Loader2, BrainCircuit, Users, Search } from 'lucide-react';
 import SubmitProofModal from '../components/SubmitProofModal';
+import { Input } from '../components/ui/input';
 import { useState } from 'react';
 
 export default function TaskDetails() {
@@ -22,6 +23,7 @@ export default function TaskDetails() {
   const { addToast } = useApp();
   const queryClient = useQueryClient();
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: task, isLoading: taskLoading } = useQuery({
     queryKey: ['tasks', Number(id)],
@@ -102,6 +104,28 @@ export default function TaskDetails() {
           </div>
         </div>
 
+        {isOwner && task.assigned_worker_id && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-10 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+            <div className="flex gap-4 items-center">
+              <div className="w-12 h-12 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-black text-xl shadow-inner">
+                {workers.find(w => w.id === task.assigned_worker_id)?.name?.[0] || 'W'}
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Assigned Worker</div>
+                <div className="text-lg font-black text-navy-900">{workers.find(w => w.id === task.assigned_worker_id)?.name || `Worker #${task.assigned_worker_id}`}</div>
+              </div>
+            </div>
+            
+            {task.squad_va_account_number && (
+              <div className="bg-white px-6 py-4 rounded-xl border border-indigo-100 shadow-sm flex flex-col w-full md:w-auto">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5"><Lock className="w-3 h-3 text-emerald-500"/> Escrow Vault</div>
+                <div className="text-xl font-black text-navy-900 tracking-wider font-mono">{task.squad_va_account_number}</div>
+                <div className="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Funds locked & secured</div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="prose prose-slate max-w-none mb-10">
           <h3 className="text-lg font-black text-navy-900 mb-3">Description</h3>
           <p className="text-slate-600 font-medium leading-relaxed">{task.description}</p>
@@ -135,6 +159,18 @@ export default function TaskDetails() {
                 </li>
               )}
             </ul>
+            {(task.deliverable_spec as any).reference_image_urls && ((task.deliverable_spec as any).reference_image_urls as string[]).length > 0 && (
+              <div className="mt-6">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Reference Images</div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {((task.deliverable_spec as any).reference_image_urls as string[]).map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer" className="shrink-0 hover:opacity-80 transition-opacity">
+                      <img src={url} alt={`Reference ${i + 1}`} className="w-24 h-24 object-cover rounded-xl shadow-sm border border-slate-200" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -260,6 +296,79 @@ export default function TaskDetails() {
              {recommendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2 text-emerald-400" />}
              Find Workers
            </Button>
+        </div>
+      )}
+
+      {isOwner && isOpen && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl p-8 md:p-12 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-indigo-600" />
+              <h2 className="text-2xl font-black text-navy-900">Manual Worker Search</h2>
+            </div>
+          </div>
+          
+          <div className="relative mb-6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input 
+              placeholder="Search workers by name, skills, or location..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-14 bg-slate-50 border-none rounded-xl text-base font-medium"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {workers
+              .filter(w => 
+                !searchTerm || 
+                w.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                w.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                w.primary_location?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map(worker => (
+                <div key={worker.id} className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col justify-between hover:border-indigo-200 transition-all hover:shadow-md">
+                  <div className="mb-4">
+                    <div className="font-black text-lg text-navy-900">{worker.name}</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
+                      {worker.primary_location || 'Unknown Location'}
+                    </div>
+                    {worker.skills && worker.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {worker.skills.slice(0, 3).map(skill => (
+                          <Badge key={skill} className="bg-white text-slate-600 border border-slate-200 text-[9px] uppercase font-bold px-2 py-0.5">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {worker.skills.length > 3 && (
+                          <Badge className="bg-white text-slate-600 border border-slate-200 text-[9px] uppercase font-bold px-2 py-0.5">
+                            +{worker.skills.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => assignMutation.mutate({ taskId: Number(id), workerId: worker.id })}
+                    disabled={assignMutation.isPending}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs h-12 rounded-xl mt-4"
+                  >
+                    {assignMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Assign Worker
+                  </Button>
+                </div>
+              ))}
+            {workers.filter(w => 
+                !searchTerm || 
+                w.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                w.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                w.primary_location?.toLowerCase().includes(searchTerm.toLowerCase())
+              ).length === 0 && (
+                <div className="col-span-1 sm:col-span-2 text-center py-10 text-slate-400 font-medium">
+                  No workers found matching "{searchTerm}"
+                </div>
+              )}
+          </div>
         </div>
       )}
 
