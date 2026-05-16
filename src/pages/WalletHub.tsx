@@ -69,7 +69,7 @@ function CreditGauge({ score }: { score: number }) {
   )
 }
 
-export default function Finance() {
+export default function WalletHub() {
   const { addToast } = useApp()
   const { user } = useAuth()
   

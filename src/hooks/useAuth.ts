@@ -20,7 +20,7 @@ export const useAuth = create<AuthStore>()(
         set({ isLoading: true });
         try {
           const { user, token } = await api.login(credentials);
-          localStorage.setItem('taskverify_token', token);
+          localStorage.setItem('servid_token', token);
           set({ user, isAuthenticated: true });
         } catch (error) {
           throw error;
@@ -31,8 +31,20 @@ export const useAuth = create<AuthStore>()(
       register: async (data) => {
         set({ isLoading: true });
         try {
-          const { user, token } = await api.register(data);
-          localStorage.setItem('taskverify_token', token);
+          // Map guest to buyer for the backend, as guest isn't supported yet
+          const backendData = { ...data };
+          if (backendData.role === 'guest') {
+            backendData.role = 'buyer';
+          }
+          
+          const { user, token } = await api.register(backendData);
+          
+          // Override the role back to guest on the frontend for presentation
+          if (data.role === 'guest') {
+            user.role = 'guest';
+          }
+
+          localStorage.setItem('servid_token', token);
           set({ user, isAuthenticated: true });
         } catch (error) {
           throw error;
@@ -41,13 +53,13 @@ export const useAuth = create<AuthStore>()(
         }
       },
       logout: () => {
-        localStorage.removeItem('taskverify_token');
+        localStorage.removeItem('servid_token');
         set({ user: null, isAuthenticated: false });
       },
       setUser: (user) => set({ user, isAuthenticated: !!user }),
     }),
     {
-      name: 'taskverify-auth',
+      name: 'servid-auth',
     }
   )
 );

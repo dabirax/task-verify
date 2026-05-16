@@ -40,6 +40,7 @@ export default function UserDashboard() {
   const isWorker = user?.role === 'worker';
   const isEmployer = user?.role === 'buyer' || user?.role === 'employer';
   const isAdmin = user?.role === 'admin';
+  const isCommunity = user?.role === 'guest';
   const navigate = useNavigate();
 
   const { data: buyerTasks, isLoading: loadingBuyerTasks } = useBuyerTasks({ enabled: isEmployer });
@@ -60,6 +61,11 @@ export default function UserDashboard() {
     { label: 'Completed Services', value: String(workerProfile?.tasks_completed || 0), icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-50' },
     { label: 'Trust Score', value: workerProfile?.trust_score || user?.trust_score || 0, icon: ShieldCheck, color: 'text-violet-500', bg: 'bg-violet-50' },
     { label: 'Avg Rating', value: `${workerProfile?.avg_rating || 0}★`, icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
+  ] : isCommunity ? [
+    { label: 'Endorsements Given', value: '142', icon: ShieldCheck, color: 'text-purple-500', bg: 'bg-purple-50' },
+    { label: 'Verified Members', value: '89', icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+    { label: 'Trust Impact', value: '+420 pts', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { label: 'Active Requests', value: '12', icon: Bell, color: 'text-amber-500', bg: 'bg-amber-50' },
   ] : [
     { label: 'Total Spent', value: formatNaira(buyerTasks?.reduce((acc, task) => acc + task.amount_naira, 0) || 0), icon: Wallet, color: 'text-blue-500', bg: 'bg-blue-50' },
     { label: 'Active Services', value: String(buyerTasks?.filter(t => t.status !== 'completed').length || 0), icon: Briefcase, color: 'text-emerald-500', bg: 'bg-emerald-50' },
@@ -72,7 +78,11 @@ export default function UserDashboard() {
     status: task.status,
     date: new Date(task.created_at).toLocaleDateString(),
     amount: formatNaira(task.amount_naira)
-  })) || []) : (buyerTasks?.slice(0, 3).map(task => ({
+  })) || []) : isCommunity ? [
+    { title: 'Tunde Bakare', status: 'pending', date: new Date().toLocaleDateString(), amount: 'Artisan' },
+    { title: 'Chidi Okafor', status: 'verified', date: new Date(Date.now() - 86400000).toLocaleDateString(), amount: 'Market Leader' },
+    { title: 'Amina Yusuf', status: 'verified', date: new Date(Date.now() - 172800000).toLocaleDateString(), amount: 'Trader' }
+  ] : (buyerTasks?.slice(0, 3).map(task => ({
     title: task.title,
     status: task.status,
     date: new Date(task.created_at).toLocaleDateString(),
@@ -120,6 +130,10 @@ export default function UserDashboard() {
                   Find Services <ArrowUpRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
+            ) : isCommunity ? (
+              <Button className="flex-1 md:flex-none h-12 px-6 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-200">
+                Endorse Member <ArrowUpRight className="ml-2 w-4 h-4" />
+              </Button>
             ) : (
               <Button onClick={() => setShowCreateModal(true)} className="flex-1 md:flex-none h-12 px-6 rounded-2xl bg-navy-900 hover:bg-navy-800 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-navy-100">
                 Request Service <ArrowUpRight className="ml-2 w-4 h-4" />
@@ -174,10 +188,10 @@ export default function UserDashboard() {
                   <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="font-black text-navy-900 text-xl tracking-tight">
-                        {isWorker ? "Recent Services" : "Active Service Postings"}
+                        {isWorker ? "Recent Services" : isCommunity ? "Endorsement Requests" : "Active Service Postings"}
                       </CardTitle>
                       <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-                        Managed via TaskVerify OS
+                        Managed via SERVID OS
                       </CardDescription>
                     </div>
                     <Link to="/services">
@@ -224,11 +238,15 @@ export default function UserDashboard() {
                       <h3 className="text-2xl font-black mb-3 tracking-tight">
                         {isWorker 
                           ? "Increase your earnings by 12% next month." 
+                          : isCommunity 
+                          ? "Your endorsements unlocked ₦1.2M in credit."
                           : "Improve hire quality with Skill Verification."}
                       </h3>
                       <p className="text-slate-400 text-sm font-medium leading-relaxed mb-6">
                         {isWorker 
                           ? "Based on your activity, we recommend adding 'Basic Electronics Repair' to your profile. There's a 40% surge in demand in Ikeja." 
+                          : isCommunity 
+                          ? "By verifying your cooperative members, you've helped 5 members secure micro-loans this month. Endorse 3 more members to increase your Community Trust Tier."
                           : "Members with verified identity documents are 3x more likely to complete services successfully. Start verifying your candidates now."}
                       </p>
                       <Button className="h-12 px-8 rounded-2xl bg-white text-navy-900 hover:bg-slate-100 font-black text-xs uppercase tracking-widest">
@@ -249,7 +267,7 @@ export default function UserDashboard() {
                     <div className="bg-slate-50 rounded-3xl p-6 text-center">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Available Balance</div>
                       <div className="text-4xl font-black text-navy-900 tracking-tight">{formatNaira(Number(wallet?.balance || 0))}</div>
-                      <Link to="/finance">
+                      <Link to="/wallet-hub">
                         <Button variant="ghost" className="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest gap-2">
                           Open Wallet Hub <ArrowUpRight className="w-3.5 h-3.5" />
                         </Button>

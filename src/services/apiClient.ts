@@ -8,7 +8,7 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 export async function apiClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, headers, ...customConfig } = options;
   
-  const token = localStorage.getItem('taskverify_token');
+  const token = localStorage.getItem('servid_token');
   
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',

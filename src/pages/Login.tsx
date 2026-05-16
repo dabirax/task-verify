@@ -35,7 +35,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login({ email, password });
-      addToast(`Welcome back to TaskVerify!`, 'success');
+      addToast(`Welcome back to SERVID!`, 'success');
       navigate('/');
     } catch (error: any) {
       addToast(error.message || 'Login failed. Please check your credentials.', 'error');
@@ -80,7 +80,7 @@ export default function Login() {
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="name@example.com" 
+                    placeholder="ade@example.com" 
                     className="pl-10 h-12 rounded-xl border-slate-200 focus:ring-emerald-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

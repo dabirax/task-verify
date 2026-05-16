@@ -267,7 +267,7 @@ POST /api/v1/tasks
     "minimum_photos": 3,
     "notes": "Upload before photos"
   },
-  "client_name": "TaskVerify Client",
+  "client_name": "SERVID Client",
   "client_email": "client@example.com"
 }
 

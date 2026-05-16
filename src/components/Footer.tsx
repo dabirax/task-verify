@@ -17,7 +17,7 @@ export default function Footer() {
         <div className="page-container py-20 flex flex-col lg:flex-row items-center justify-between gap-10">
           <div>
             <h2 className="text-4xl font-black mb-3 tracking-tight">Ready to join the ecosystem?</h2>
-            <p className="text-slate-400 text-xl font-medium">One platform. Infinite economic possibilities for Africa.</p>
+            <p className="text-slate-400 text-xl font-medium">One platform. Infinite economic possibilities for Nigeria.</p>
           </div>
           <div className="flex gap-4 flex-wrap w-full lg:w-auto">
             <Link to="/signup" className="flex-1 lg:flex-none">
@@ -43,12 +43,12 @@ export default function Footer() {
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight">TASKVERIFY</span>
-              <span className="text-[10px] font-bold text-emerald-400 tracking-[0.2em] leading-none mt-1 uppercase">National OS</span>
+              <span className="text-xl font-black tracking-tight">SERVID</span>
+              <span className="text-[10px] font-bold text-emerald-400 tracking-[0.2em] leading-none mt-1 uppercase">Economic Identity Layer</span>
             </div>
           </div>
           <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-sm font-medium">
-            Africa's National Economic Operating System. Connecting informal workers, traders, and financial services through AI-driven trust and verifiable identities.
+            Nigeria's National Economic Operating System. Connecting informal workers, traders, and financial services through AI-driven trust and verifiable identities.
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export default function Footer() {
       <div className="border-t border-white/5 bg-navy-950/80">
         <div className="page-container py-8 flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-black uppercase tracking-widest text-slate-500">
           <div className="flex items-center gap-4">
-            <p>© 2026 TaskVerify OS</p>
+            <p>© 2026 SERVID OS</p>
             <div className="w-1 h-1 rounded-full bg-slate-700" />
             <p className="flex items-center gap-1.5">
               Built with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> for the Informal Millions

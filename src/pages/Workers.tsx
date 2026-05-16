@@ -76,7 +76,7 @@ export default function Workers() {
             Verified Workers
           </h1>
           <p className="text-slate-400 text-sm font-medium">
-            Connect with skilled professionals verified by TaskVerify AI.
+            Connect with skilled professionals verified by SERVID AI.
           </p>
         </div>
 

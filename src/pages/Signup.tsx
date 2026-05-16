@@ -21,13 +21,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useApp } from '../context/AppContext';
 
 export default function Signup() {
-  const [role, setRole] = useState<'worker' | 'buyer'>('worker');
+  const [role, setRole] = useState<'worker' | 'buyer' | 'guest'>('worker');
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    org_type: 'association'
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function Signup() {
         phone: formData.phone,
         role: role
       });
-      addToast(`Account created! Welcome to TaskVerify.`, 'success');
+      addToast(`Account created! Welcome to SERVID.`, 'success');
       navigate('/');
     } catch (error: any) {
       addToast(error.message || 'Account creation failed.', 'error');
@@ -84,16 +85,23 @@ export default function Signup() {
                   <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
-                  <span className="text-xl font-black tracking-tight">TASKVERIFY</span>
+                  <span className="text-xl font-black tracking-tight">SERVID</span>
                 </Link>
-                <h2 className="text-2xl font-bold leading-tight mb-6">Start your journey to economic formalization.</h2>
+                <h2 className="text-2xl font-bold leading-tight mb-6">
+                  {role === 'guest' ? 'Digitize your community trust.' : 'Start your journey to economic formalization.'}
+                </h2>
                 <ul className="space-y-4">
-                  {[
+                  {(role === 'guest' ? [
+                    'Endorse members',
+                    'Boost member trust scores',
+                    'Verify associations',
+                    'Secure data privacy'
+                  ] : [
                     'AI-powered matching',
                     'Verifiable trust score',
                     'Squad-secured escrow',
                     'Alternative credit access'
-                  ].map((text) => (
+                  ]).map((text) => (
                     <li key={text} className="flex items-start gap-3 text-slate-300 text-sm font-medium">
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5" />
                       {text}
@@ -103,20 +111,27 @@ export default function Signup() {
               </div>
               <div className="pt-10 border-t border-white/10">
                 <p className="text-xs text-slate-400 leading-relaxed font-medium italic">
-                  "TaskVerify has changed how I access work. My trust score is now my most valuable asset."
+                  {role === 'guest' 
+                    ? `"As a cooperative leader, endorsing our members on SERVID has unlocked credit for dozens of our artisans."`
+                    : `"SERVID has changed how I access work. My trust score is now my most valuable asset."`
+                  }
                 </p>
-                <p className="text-[10px] text-emerald-400 font-bold mt-2">— Musa K., Verified Artisan</p>
+                <p className="text-[10px] text-emerald-400 font-bold mt-2">
+                  {role === 'guest' ? '— Alhaji T., Trade Union Chair' : '— Musa K., Verified Artisan'}
+                </p>
               </div>
             </div>
 
             {/* Right Signup Form */}
             <div className="md:col-span-3 p-8 md:p-10 bg-white">
               <div className="mb-8">
-                <h1 className="text-2xl font-black text-navy-900 tracking-tight">Create Identity</h1>
+                <h1 className="text-2xl font-black text-navy-900 tracking-tight">
+                  {role === 'guest' ? 'Register Community' : 'Create Identity'}
+                </h1>
                 <p className="text-slate-500 mt-1 text-sm font-medium">Join the national economic ecosystem.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-8">
+              <div className="grid grid-cols-3 gap-3 mb-8">
                 <button
                   type="button"
                   onClick={() => setRole('worker')}
@@ -127,7 +142,7 @@ export default function Signup() {
                   }`}
                 >
                   <Briefcase className={`w-6 h-6 ${role === 'worker' ? 'text-emerald-500' : 'text-slate-300'}`} />
-                  <span className="text-xs font-bold uppercase tracking-wider">I'm a Worker</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Worker</span>
                 </button>
                 <button
                   type="button"
@@ -139,23 +154,57 @@ export default function Signup() {
                   }`}
                 >
                   <Store className={`w-6 h-6 ${role === 'buyer' ? 'text-blue-500' : 'text-slate-300'}`} />
-                  <span className="text-xs font-bold uppercase tracking-wider">I'm a Buyer</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Client</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('guest')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    role === 'guest' 
+                    ? 'border-purple-500 bg-purple-50/50 text-purple-700' 
+                    : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'
+                  }`}
+                >
+                  <User className={`w-6 h-6 ${role === 'guest' ? 'text-purple-500' : 'text-slate-300'}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Community</span>
                 </button>
               </div>
 
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="full_name" className="text-xs font-bold text-navy-900 ml-1">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                    <Input 
-                      id="full_name" 
-                      placeholder="John Doe" 
-                      className="pl-10 h-11 rounded-xl border-slate-200"
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    />
+                <div className={`grid ${role === 'guest' ? 'grid-cols-2 gap-3' : 'grid-cols-1'}`}>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="full_name" className="text-xs font-bold text-navy-900 ml-1">
+                      {role === 'guest' ? 'Organization/Community Name' : 'Full Name'}
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                      <Input 
+                        id="full_name" 
+                        placeholder={role === 'guest' ? "E.g. Lagos Artisan Guild" : "Ade Mustapha"} 
+                        className="pl-10 h-11 rounded-xl border-slate-200"
+                        value={formData.full_name}
+                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                      />
+                    </div>
                   </div>
+                  
+                  {role === 'guest' && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="org_type" className="text-xs font-bold text-navy-900 ml-1">Organization Type</Label>
+                      <select 
+                        id="org_type"
+                        className="w-full h-11 border rounded-xl border-slate-200 text-sm px-3 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                        value={formData.org_type}
+                        onChange={(e) => setFormData({...formData, org_type: e.target.value})}
+                      >
+                        <option value="association">Association</option>
+                        <option value="cooperative">Cooperative</option>
+                        <option value="union">Trade Union</option>
+                        <option value="guild">Artisan Guild</option>
+                        <option value="market_leaders">Market Leaders</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -166,7 +215,7 @@ export default function Signup() {
                       <Input 
                         id="email" 
                         type="email" 
-                        placeholder="john@example.com" 
+                        placeholder="ade@example.com" 
                         className="pl-10 h-11 rounded-xl border-slate-200"
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -223,7 +272,9 @@ export default function Signup() {
                     className={`w-full h-12 rounded-xl text-white font-bold text-base shadow-lg transition-all ${
                       role === 'worker' 
                       ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' 
-                      : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                      : role === 'buyer'
+                      ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                      : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200'
                     }`}
                     disabled={isLoading}
                   >

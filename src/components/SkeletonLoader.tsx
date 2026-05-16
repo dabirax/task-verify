@@ -85,7 +85,7 @@ export function FullPageLoader() {
       </div>
       <div className="flex flex-col items-center gap-3 text-center px-6">
         <h2 className="text-2xl font-black text-navy-900 tracking-tight leading-none uppercase tracking-[0.2em]">Authenticating</h2>
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Connecting to National OS Infrastructure…</p>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Connecting to Economic Identity Layer…</p>
       </div>
       <div className="flex gap-2">
         {[0, 1, 2].map((i) => (

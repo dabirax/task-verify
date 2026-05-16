@@ -61,7 +61,7 @@ export function ConversationList({
           No conversations yet
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-          Start messaging workers or buyers
+          Start messaging workers or clients
         </p>
       </div>
     );

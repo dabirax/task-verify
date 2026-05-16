@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+<<<<<<< HEAD
 import { useQueryClient} from '@tanstack/react-query';
+=======
+import { Link } from 'react-router-dom';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+>>>>>>> c77445b (commits)
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
@@ -139,9 +144,15 @@ export default function Profile() {
              ) : (
                <h2 className="text-2xl font-black text-navy-900 mb-1">{workerProfile?.name || user?.full_name || 'User'}</h2>
              )}
-             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-slate-500 font-bold">
+             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-slate-500 font-bold mt-2">
                <div className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {user?.email}</div>
                <Badge variant="secondary" className="uppercase tracking-widest text-[10px]">{user?.role}</Badge>
+               <Link to="/profile/trust-score">
+                 <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 uppercase tracking-widest text-[10px] cursor-pointer shadow-sm hover:shadow-md transition-all">
+                   <ShieldCheck className="w-3 h-3 mr-1" />
+                   Trust Rating: {workerProfile?.trust_score ?? user?.trust_score ?? 750}
+                 </Badge>
+               </Link>
              </div>
           </div>
         </div>
@@ -331,10 +342,11 @@ export default function Profile() {
                     <Badge className="bg-white/10 text-white border-none font-black text-[10px] uppercase tracking-widest">{workerProfile.tier} Tier</Badge>
                   )}
                 </div>
-                <div className="flex items-end gap-3 mb-6 relative z-10">
-                  <div className="text-4xl font-black">{workerProfile.trust_score}</div>
+                <Link to="/profile/trust-score" className="flex items-end gap-3 mb-6 relative z-10 group cursor-pointer w-max">
+                  <div className="text-4xl font-black group-hover:text-emerald-400 transition-colors">{workerProfile.trust_score}</div>
                   <div className="text-sm font-bold text-slate-300 pb-1">Points</div>
-                </div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 pb-1.5 ml-2 group-hover:underline">View Breakdown &rarr;</div>
+                </Link>
 
                 {workerProfile.economic_profile && (
                   <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10 relative z-10">
@@ -349,14 +361,22 @@ export default function Profile() {
                   </div>
                 )}
                 
-                {kycStatus?.status !== 'approved' && (
-                  <Button 
-                    onClick={() => setShowKYC(true)}
-                    className="mt-6 bg-white text-navy-950 hover:bg-slate-100 font-black text-xs uppercase tracking-widest px-6 h-10 rounded-xl"
-                  >
-                    Complete National KYC <ShieldCheck className="ml-2 w-4 h-4 text-emerald-500" />
-                  </Button>
-                )}
+                <div className="mt-6 pt-6 border-t border-white/10 relative z-10 flex flex-col gap-3">
+                  <Link to="/profile/trust-score" className="w-full">
+                    <Button className="w-full bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest h-12 rounded-xl">
+                      View Detailed Breakdown
+                    </Button>
+                  </Link>
+
+                  {kycStatus?.status !== 'approved' && (
+                    <Button 
+                      onClick={() => setShowKYC(true)}
+                      className="w-full bg-white text-navy-950 hover:bg-slate-100 font-black text-xs uppercase tracking-widest h-12 rounded-xl shadow-lg shadow-white/10"
+                    >
+                      Complete National KYC <ShieldCheck className="ml-2 w-4 h-4 text-emerald-500" />
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -377,8 +397,8 @@ export default function Profile() {
         {user?.role === 'buyer' && (
           <div className="p-8">
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
-               <h3 className="text-lg font-black text-navy-900 mb-2">Buyer Account</h3>
-               <p className="text-slate-500 font-medium">You are logged in as a Buyer. Use the Finance page to manage your Squad Escrow transactions and fund your wallet.</p>
+               <h3 className="text-lg font-black text-navy-900 mb-2">Client Account</h3>
+               <p className="text-slate-500 font-medium">You are logged in as a Client. Use the Wallet Hub to manage your Squad Escrow transactions and fund your wallet.</p>
             </div>
           </div>
         )}

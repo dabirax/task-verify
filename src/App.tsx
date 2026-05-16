@@ -4,7 +4,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ToastContainer from './components/Toast'
 import Landing from './pages/Landing'
-import Finance from './pages/Finance'
+import WalletHub from './pages/WalletHub'
 import Admin from './pages/Admin'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -14,6 +14,7 @@ import TaskDetails from './pages/TaskDetails'
 import Workers from './pages/Workers'
 import WorkerDetails from './pages/WorkerDetails'
 import Profile from './pages/Profile'
+import TrustScoreBreakdown from './pages/TrustScoreBreakdown'
 import Notifications from './pages/Notifications'
 import Inbox from './pages/Inbox'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -41,10 +42,10 @@ export default function App() {
 
             {/* Protected Routes */}
             <Route
-              path="/finance"
+              path="/wallet-hub"
               element={
                 <ProtectedRoute>
-                  <Finance />
+                  <WalletHub />
                 </ProtectedRoute>
               }
             />
@@ -85,6 +86,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/trust-score"
+              element={
+                <ProtectedRoute>
+                  <TrustScoreBreakdown />
                 </ProtectedRoute>
               }
             />

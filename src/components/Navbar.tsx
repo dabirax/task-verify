@@ -81,7 +81,6 @@ export default function Navbar() {
         { to: '/services', label: 'Services', icon: Briefcase },
         { to: '/workers', label: 'Workers', icon: Users },
         { to: '/inbox', label: 'Messages', icon: MessageCircle },
-        { to: '/finance', label: 'Finance', icon: Wallet },
         { to: '/admin', label: 'Admin', icon: ShieldCheck, role: 'admin' },
       ]
     : [
@@ -125,8 +124,8 @@ export default function Navbar() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black text-navy-900 leading-none tracking-tight">TASKVERIFY</span>
-              <span className="text-[10px] font-bold text-emerald-600 tracking-[0.2em] leading-none mt-1 uppercase">National OS</span>
+              <span className="text-xl font-black text-navy-900 leading-none tracking-tight">SERVID</span>
+              <span className="text-[10px] font-bold text-emerald-600 tracking-[0.2em] leading-none mt-1 uppercase">Economic Identity Layer</span>
             </div>
           </Link>
 
@@ -249,10 +248,10 @@ export default function Navbar() {
                     <DropdownMenuItem onClick={() => navigate('/profile')} className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
                       <UserIcon className="w-4 h-4 mr-3 text-slate-400" /> My Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
+                    <DropdownMenuItem onClick={() => navigate('/profile/trust-score')} className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
                       <Star className="w-4 h-4 mr-3 text-amber-500" /> Trust Rating
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
+                    <DropdownMenuItem onClick={() => navigate('/wallet-hub')} className="rounded-xl py-2.5 focus:bg-slate-50 cursor-pointer font-bold text-sm">
                       <Wallet className="w-4 h-4 mr-3 text-blue-500" /> Wallet Hub
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-slate-50" />

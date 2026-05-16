@@ -207,26 +207,20 @@ export default function Landing() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
       {/* HERO */}
-      <section id="hero" className="relative min-h-screen flex items-center overflow-hidden bg-white pt-20">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-emerald-50 opacity-60 blur-3xl translate-x-1/3 -translate-y-1/4" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-blue-50 opacity-50 blur-3xl -translate-x-1/4 translate-y-1/4" />
-        </div>
+      <section id="hero" className="relative min-h-screen flex items-center overflow-hidden bg-white">
 
-        <div className="page-container relative z-10 grid lg:grid-cols-2 gap-12 items-center py-20">
-          <div>
+        <div className="page-container relative z-10 grid lg:grid-cols-3 gap-12 md:gap-4 items-center !py-10">
+          <div className='col-span-2'>
 
 
             <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="text-5xl md:text-6xl lg:text-7xl font-black text-navy-900 leading-[1.05] tracking-tight mb-6">
-              Powering Africa's<br />
-              <span className="gradient-text">Informal Economy</span><br />
-              with AI
+              Powering Nigeria's Informal Economy              with AI
             </motion.h1>
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
               className="text-xl text-slate-500 leading-relaxed mb-8 max-w-lg font-medium">
-              One ecosystem connecting work, trade, trust, and finance — built for 400 million Africans outside the formal economy.
+              One ecosystem connecting work, trade, trust, and finance — built for millions of Nigerians outside the formal economy.
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
@@ -265,7 +259,7 @@ export default function Landing() {
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-emerald-500 to-blue-600 shadow-glow-emerald flex items-center justify-center z-10">
               <div className="text-center text-white">
                 <ShieldCheck className="w-10 h-10 mb-1 mx-auto" />
-                <div className="font-black text-[10px]">TASKVERIFY</div>
+                <div className="font-black text-[10px]">SERVID</div>
               </div>
             </motion.div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full border border-dashed border-slate-200 animate-spin-slow" />
@@ -312,7 +306,7 @@ export default function Landing() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center" style={{ width: 160 }}>
               <div className="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-emerald-500 to-blue-600 shadow-glow-emerald mx-auto flex flex-col items-center justify-center mb-4 text-white">
                 <ShieldCheck className="w-10 h-10 mb-1" />
-                <div className="font-black text-[10px] tracking-widest">TASKVERIFY</div>
+                <div className="font-black text-[10px] tracking-widest">SERVID</div>
               </div>
             </div>
 
@@ -356,7 +350,7 @@ export default function Landing() {
         <div className="page-container">
           <div className="text-center mb-12">
             <Badge className="bg-violet-600 text-white rounded-full px-6 py-1.5 mb-6">Verified Talent</Badge>
-            <h2 className="text-4xl md:text-5xl font-black text-navy-900 mb-6">Africa's most reliable workforce</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-navy-900 mb-6">Nigeria's most reliable workforce</h2>
             <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">Every worker is vetted by AI, verified by documents, and rated by their community.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -378,7 +372,7 @@ export default function Landing() {
               <Badge variant="outline" className="text-emerald-400 border-emerald-400/30 px-6 py-1.5 mb-6 uppercase tracking-widest font-black">AI & Sector Analytics</Badge>
               <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight">Insight into the<br /><span className="text-emerald-400">Invisible Economy</span></h2>
               <p className="text-slate-400 text-lg font-medium leading-relaxed mb-10">
-                We capture data that was previously lost. For the first time, see real-time employment rates, sector growth, and economic health across Africa's informal markets.
+                We capture data that was previously lost. For the first time, see real-time employment rates, sector growth, and economic health across Nigeria's informal markets.
               </p>
               <div className="space-y-6">
                 {[
@@ -435,7 +429,7 @@ export default function Landing() {
         <div className="page-container text-center">
           <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-6xl font-black text-navy-900 mb-8 leading-tight tracking-tight">
-            Ready to formalize Africa's<br /><span className="gradient-text">informal billions?</span>
+            Ready to formalize Nigeria's<br /><span className="gradient-text">informal billions?</span>
           </motion.h2>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link to="/signup">

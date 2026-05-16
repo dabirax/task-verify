@@ -15,14 +15,13 @@ export function DisputesSection() {
   const navigate = useNavigate();
 
   if (isLoading) {
-    return <SkeletonLoader />;
+    return <SkeletonLoader type="tasks" />;
   }
 
   if (!disputes || disputes.length === 0) {
     return (
       <div className="rounded-[2rem] border border-slate-100 shadow-xl p-8">
         <EmptyState
-          icon={Scale}
           title="No Active Disputes"
           description="You don't have any ongoing disputes. All tasks are proceeding smoothly."
         />

@@ -74,6 +74,7 @@ export type TaskStatus =
   | 'shortlisted'
   | 'applications_open'
   | 'selection_in_progress'
+  | 'selected'
   | 'assigned'
   | 'submitted'
   | 'verified'
@@ -274,6 +275,8 @@ export interface Dispute {
   status: 'open' | 'resolved_worker' | 'resolved_buyer' | 'escalated';
   resolution?: string;
   resolution_note?: string;
+  resolved_at?: string | null;
+  task?: { title?: string } | null;
   created_at: string;
   updated_at: string;
 }

@@ -41,7 +41,7 @@ export default function InboxPage() {
           <div className="w-full md:w-80 bg-white dark:bg-slate-900 rounded-lg shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800">
             {isLoading ? (
               <div className="p-4">
-                <SkeletonLoader count={3} />
+                <SkeletonLoader type="tasks" />
               </div>
             ) : (
               <ConversationList
