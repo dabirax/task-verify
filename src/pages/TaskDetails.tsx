@@ -81,7 +81,7 @@ export default function TaskDetails() {
     : (matches.length > 0 ? matches : (task?.shortlisted_workers || []));
 
   const mappedMatches = useMemo(() => {
-    return (displayMatches || []).map((workerOrId) => {
+    return (displayMatches || []).map((workerOrId: any) => {
       const isMatchObject = typeof workerOrId === 'object' && workerOrId !== null;
       const raw = (isMatchObject ? workerOrId : {}) as Partial<WorkerMatch>;
       const workerId = isMatchObject ? Number(raw.worker_id) : Number(workerOrId);
@@ -114,7 +114,7 @@ export default function TaskDetails() {
   }, [displayMatches, workers]);
 
   const filteredMatches = useMemo(() => {
-    return mappedMatches.filter((m) => {
+    return mappedMatches.filter((m: any) => {
       if (activeUseCase === 'best_skill_fit') {
         return m.use_case_tags.length === 0 || m.use_case_tags.includes(activeUseCase);
       }
@@ -597,7 +597,7 @@ export default function TaskDetails() {
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-              {filteredMatches.length > 0 ? filteredMatches.map((workerInfo) => {
+              {filteredMatches.length > 0 ? filteredMatches.map((workerInfo: any) => {
                 const workerId = workerInfo.worker_id;
 
                 return (
@@ -645,7 +645,7 @@ export default function TaskDetails() {
                       </div>
 
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {workerInfo.use_case_tags.map((tag) => (
+                        {workerInfo.use_case_tags.map((tag: string) => (
                           <Badge key={tag} variant="outline" className="text-[10px] uppercase tracking-widest font-black border-blue-200 text-blue-700 bg-blue-50">
                             {tag}
                           </Badge>
@@ -669,7 +669,7 @@ export default function TaskDetails() {
                             <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Strengths</div>
                             {workerInfo.strengths.length > 0 ? (
                               <ul className="list-disc pl-4 text-xs text-slate-700 space-y-1">
-                                {workerInfo.strengths.map((item, idx) => (
+                                {workerInfo.strengths.map((item: string, idx: number) => (
                                   <li key={`${workerId}-s-${idx}`}>{item}</li>
                                 ))}
                               </ul>
@@ -681,7 +681,7 @@ export default function TaskDetails() {
                             <div className="text-[10px] font-black uppercase tracking-widest text-rose-700 mb-1">Risks</div>
                             {workerInfo.risks.length > 0 ? (
                               <ul className="list-disc pl-4 text-xs text-slate-700 space-y-1">
-                                {workerInfo.risks.map((item, idx) => (
+                                {workerInfo.risks.map((item: string, idx: number) => (
                                   <li key={`${workerId}-r-${idx}`}>{item}</li>
                                 ))}
                               </ul>

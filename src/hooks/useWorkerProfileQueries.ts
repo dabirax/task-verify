@@ -22,7 +22,7 @@ export function useCreateWorkerProfile() {
 export function useUpdateWorkerProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<import('../types').Worker>) => workerProfileApi.updateProfile(data),
+    mutationFn: (data: Partial<import('../types').Worker>) => workerProfileApi.updateProfile(data as any),
     onSuccess: (data: import('../types').Worker) => {
       queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
       queryClient.setQueryData(['worker', 'profile'], data);
