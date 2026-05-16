@@ -215,7 +215,7 @@ export default function Landing() {
 
             <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="text-5xl md:text-6xl lg:text-7xl font-black text-navy-900 leading-[1.05] tracking-tight mb-6">
-              Powering Nigeria's Informal Economy              with AI
+              Powering Nigeria's Informal Economy<br />with AI
             </motion.h1>
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
@@ -266,10 +266,10 @@ export default function Landing() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] rounded-full border border-dashed border-slate-100" />
             
             {[
-              { top: '8%', left: '60%', label: 'Amaka matched', sub: '92% fit · Cleaning' },
-              { top: '32%', left: '72%', label: '₦25,000 escrowed', sub: 'Squad VA · Secured' },
-              { top: '58%', left: '58%', label: 'Trust Score 920', sub: '40 jobs · 96% on-time' },
-              { top: '75%', left: '70%', label: 'Loan approved', sub: '₦150K · Low risk' },
+              { top: '5%', left: '-15%', label: 'Amaka matched', sub: '92% fit · Cleaning' },
+              { top: '28%', left: '65%', label: '₦25,000 escrowed', sub: 'Squad VA · Secured' },
+              { top: '62%', left: '-20%', label: 'Trust Score 920', sub: '40 jobs · 96% on-time' },
+              { top: '82%', left: '50%', label: 'Loan approved', sub: '₦150K · Low risk' },
             ].map((card, i) => (
               <motion.div key={i}
                 animate={{ y: [0, -10, 0] }}
