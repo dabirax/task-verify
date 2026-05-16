@@ -121,12 +121,19 @@ export interface Task {
   proof_submission?: Record<string, unknown> | null;
   submitted_at?: string | null;
   ai_verification_result?: Record<string, unknown> | null;
+  scenario_recommendations?: ScenarioRecommendation[];
   verified_at?: string | null;
   squad_va_account_number?: string | null;
   squad_payment_ref?: string | null;
   escrow?: EscrowAccount | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ScenarioRecommendation {
+  use_case: string;
+  preferred_worker_id: string;
+  why: string;
 }
 
 export interface EscrowAccount {
@@ -243,7 +250,13 @@ export interface WorkerMatch {
   worker_id: number;
   name: string;
   match_score: number;
-  reasons: string[];
+  rank?: number;
+  recommendation_reason?: string;
+  tradeoff_note?: string;
+  use_case_tags?: string[];
+  strengths?: string[];
+  risks?: string[];
+  confidence?: number | null;
   distance_km: number;
 }
 

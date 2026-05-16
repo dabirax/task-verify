@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Loader2, Plus, X, BrainCircuit, MapPin, Calendar, Banknote, Briefcase } from 'lucide-react';
-import { useCreateTaskMultipart } from '../hooks/useBuyerQueries';
+import { useCreateTask } from '../hooks/useBuyerQueries';
 import { useApp } from '../context/AppContext';
 import type { WorkerMatch } from '../types';
 
@@ -21,7 +21,7 @@ const SKILL_OPTIONS = ['cleaning', 'delivery', 'carpentry', 'tailoring', 'cookin
 
 export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTaskModalProps) {
   const { addToast } = useApp();
-  const { mutate, isPending } = useCreateTaskMultipart();
+  const { mutate, isPending } = useCreateTask();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,7 +33,6 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
   const [photosRequired, setPhotosRequired] = useState(true);
   const [minPhotos, setMinPhotos] = useState('3');
   const [specNotes, setSpecNotes] = useState('');
-  const [refImages, setRefImages] = useState<FileList | null>(null);
 
   const addSkill = (skill: string) => {
     const s = skill.trim().toLowerCase();
@@ -46,35 +45,23 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const deliverableSpec = JSON.stringify({
+    const deliverableSpec = {
       photos_required: photosRequired,
       minimum_photos: Number(minPhotos),
       notes: specNotes,
-    });
+    };
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('amount_naira', amount.toString());
-    formData.append('task_location', location);
-    formData.append('due_date', new Date(dueDate).toISOString());
-    formData.append('deliverable_spec', deliverableSpec);
-    
-    // Explicitly send these if available, though they are not required
-    formData.append('client_name', 'Anonymous');
-    formData.append('client_email', 'client@example.com');
-
-    // For multer, array fields are tricky. If we send a JSON string, the backend might parse it correctly or ignore it without crashing.
-    if (skills.length > 0) {
-      skills.forEach(s => formData.append('required_skills[]', s));
-    }
-    if (refImages) {
-      for (let i = 0; i < refImages.length; i++) {
-        formData.append('deliverable_images', refImages[i]);
-      }
-    }
-
-    mutate(formData, {
+    mutate({
+      title,
+      description,
+      amount_naira: Number(amount),
+      task_location: location,
+      due_date: new Date(dueDate).toISOString(),
+      deliverable_spec: deliverableSpec,
+      client_name: 'Anonymous',
+      client_email: 'client@example.com',
+      required_skills: skills,
+    }, {
       onSuccess: (data) => {
         addToast('Task created! AI matched candidates for you.', 'success');
         onCreated?.(data.task.id, data.matches || []);
@@ -90,7 +77,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
   const resetForm = () => {
     setTitle(''); setDescription(''); setAmount(''); setLocation('');
     setDueDate(''); setSkills([]); setSkillInput('');
-    setPhotosRequired(true); setMinPhotos('3'); setSpecNotes(''); setRefImages(null);
+    setPhotosRequired(true); setMinPhotos('3'); setSpecNotes('');
   };
 
   return (
@@ -261,19 +248,6 @@ export default function CreateTaskModal({ isOpen, onClose, onCreated }: CreateTa
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Reference Images (optional)</Label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={e => setRefImages(e.target.files)}
-                className="text-xs text-slate-500"
-              />
-              {refImages && (
-                <p className="text-[10px] font-bold text-emerald-600 uppercase">{refImages.length} image(s) selected</p>
-              )}
-            </div>
           </div>
 
           {/* Submit */}

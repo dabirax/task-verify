@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
@@ -12,10 +12,23 @@ import { formatNaira, formatDate, statusConfig, getSkillColor } from '../utils/f
 import { MapPin, Calendar, Clock, Lock, CheckCircle2, Zap, ArrowLeft, Loader2, BrainCircuit, Users, Search, MessageCircle, AlertTriangle, Cpu, CheckSquare, Pencil, Trash2 } from 'lucide-react';
 import SubmitProofModal from '../components/SubmitProofModal';
 import { Input } from '../components/ui/input';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { QuickMessageModal } from '../components/QuickMessageModal';
 import { DisputeModal } from '../components/DisputeModal';
 import EditTaskModal from '../components/EditTaskModal';
+import type { WorkerMatch } from '../types';
+
+type UseCaseFilter = 'best_skill_fit' | 'safest_option' | 'nearest_worker' | 'budget_sensitive';
+
+const USE_CASE_TABS: Array<{ key: UseCaseFilter; label: string }> = [
+  { key: 'best_skill_fit', label: 'Best Skill Fit' },
+  { key: 'safest_option', label: 'Safest Option' },
+  { key: 'nearest_worker', label: 'Nearest Worker' },
+  { key: 'budget_sensitive', label: 'Budget Sensitive' },
+];
+
+const DEFAULT_RECOMMENDATION_REASON = 'Matched by deterministic engine.';
+const DEFAULT_TRADEOFF_NOTE = 'Review trust score and risk before assignment.';
 
 export default function TaskDetails() {
   const { id } = useParams();
@@ -25,7 +38,6 @@ export default function TaskDetails() {
   const { user } = useAuth();
   const matches = location.state?.matches || [];
   const { addToast } = useApp();
-  const queryClient = useQueryClient();
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -33,6 +45,9 @@ export default function TaskDetails() {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState<{ id: number | string; name: string; avatar_url?: string | null; isWorker: boolean } | null>(null);
+  const [activeUseCase, setActiveUseCase] = useState<UseCaseFilter>('best_skill_fit');
+  const [focusedWorkerId, setFocusedWorkerId] = useState<number | null>(null);
+  const workerCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const { data: workerProfile } = useWorkerProfile({ enabled: user?.role === 'worker' });
   const actualWorkerId = user?.worker_id || workerProfile?.id;
@@ -61,7 +76,53 @@ export default function TaskDetails() {
   const deleteTaskMutation = useDeleteTask();
   const requestReleaseMutation = useRequestFundRelease();
   
-  const displayMatches = matches.length > 0 ? matches : (task?.ai_recommendations || task?.shortlisted_workers || []);
+  const displayMatches = task?.ai_recommendations?.length
+    ? task.ai_recommendations
+    : (matches.length > 0 ? matches : (task?.shortlisted_workers || []));
+
+  const mappedMatches = useMemo(() => {
+    return (displayMatches || []).map((workerOrId) => {
+      const isMatchObject = typeof workerOrId === 'object' && workerOrId !== null;
+      const raw = (isMatchObject ? workerOrId : {}) as Partial<WorkerMatch>;
+      const workerId = isMatchObject ? Number(raw.worker_id) : Number(workerOrId);
+      const workerData = workers.find((w) => w.id === workerId);
+      const useCaseTags = Array.isArray(raw.use_case_tags) ? raw.use_case_tags : [];
+      const strengths = Array.isArray(raw.strengths) ? raw.strengths : [];
+      const risks = Array.isArray(raw.risks) ? raw.risks : [];
+      const recommendationReason = raw.recommendation_reason || DEFAULT_RECOMMENDATION_REASON;
+      const tradeoffNote = raw.tradeoff_note || DEFAULT_TRADEOFF_NOTE;
+      const confidence = typeof raw.confidence === 'number' ? raw.confidence : null;
+      const metadataSparse = !raw.recommendation_reason || !raw.tradeoff_note || useCaseTags.length === 0;
+
+      return {
+        worker_id: workerId,
+        name: raw.name || workerData?.name || `Worker #${workerId}`,
+        match_score: typeof raw.match_score === 'number' ? raw.match_score : 0,
+        rank: raw.rank,
+        recommendation_reason: recommendationReason,
+        tradeoff_note: tradeoffNote,
+        use_case_tags: useCaseTags,
+        strengths,
+        risks,
+        confidence,
+        distance_km: typeof raw.distance_km === 'number' ? raw.distance_km : 0,
+        avatar_url: workerData?.avatar_url,
+        primary_location: workerData?.primary_location || 'Unknown Location',
+        metadataSparse,
+      };
+    });
+  }, [displayMatches, workers]);
+
+  const filteredMatches = useMemo(() => {
+    return mappedMatches.filter((m) => {
+      if (activeUseCase === 'best_skill_fit') {
+        return m.use_case_tags.length === 0 || m.use_case_tags.includes(activeUseCase);
+      }
+      return m.use_case_tags.includes(activeUseCase);
+    });
+  }, [activeUseCase, mappedMatches]);
+
+  const scenarioRecommendations = Array.isArray(task?.scenario_recommendations) ? task.scenario_recommendations : [];
 
   if (taskLoading) {
     return (
@@ -89,6 +150,9 @@ export default function TaskDetails() {
   const isSelectionActive = isOwner && (task.status === 'posted' || task.status === 'open' || task.status === 'selected' || task.status === 'selection_in_progress');
   const canEditTask = isOwner && ['posted', 'open', 'selection_in_progress', 'selected'].includes(task.status);
   const canDeleteTask = isOwner && ['posted', 'open', 'selection_in_progress'].includes(task.status);
+  const isFlaggedNotVerified =
+    task.status === 'flagged_for_dispute' ||
+    ((task.ai_verification_result as { verified?: boolean } | null | undefined)?.verified === false);
 
   const formatRemainingTime = (seconds?: number) => {
     if (!seconds || seconds <= 0) return 'Expired';
@@ -392,7 +456,7 @@ export default function TaskDetails() {
                   Request Release
                 </Button>
               )}
-              {task.status === 'assigned' && (
+              {(task.status === 'assigned' || isFlaggedNotVerified) && (
                 <Button 
                   onClick={() => setShowSubmitModal(true)}
                   className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all duration-300 shadow-xl shadow-emerald-100"
@@ -400,7 +464,7 @@ export default function TaskDetails() {
                   Submit Proof <CheckCircle2 className="ml-2 w-5 h-5" />
                 </Button>
               )}
-              {(task.status === 'verified' || task.status === 'submitted' || task.status === 'completed' || task.status === 'pending_release_of_funds') && (
+              {(task.status === 'verified' || task.status === 'submitted' || task.status === 'completed' || task.status === 'pending_release_of_funds' || isFlaggedNotVerified) && (
                 <Button 
                   onClick={() => setShowDisputeModal(true)}
                   variant="outline"
@@ -435,10 +499,10 @@ export default function TaskDetails() {
                 </div>
               )}
 
-              {(task.status === 'submitted' || task.status === 'verified' || task.status === 'pending_release_of_funds') && (
+              {(task.status === 'submitted' || task.status === 'verified' || task.status === 'pending_release_of_funds' || isFlaggedNotVerified) && (
                 <Button
                   onClick={() => setShowDisputeModal(true)}
-                  disabled={!disputeWindow?.is_open}
+                  disabled={!isFlaggedNotVerified && !disputeWindow?.is_open}
                   variant="outline"
                   className="h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50"
                 >
@@ -447,7 +511,7 @@ export default function TaskDetails() {
                 </Button>
               )}
 
-              {(task.status === 'verified' || task.status === 'pending_release_of_funds') && (
+              {(task.status === 'verified' || task.status === 'pending_release_of_funds' || isFlaggedNotVerified) && (
                 <Button
                   onClick={() => releaseFundsMutation.mutate(taskIdNumber, {
                     onSuccess: () => addToast('Funds released to worker successfully', 'success'),
@@ -484,20 +548,72 @@ export default function TaskDetails() {
                 {recommendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2 text-blue-500" />}
                 Refresh Matches
               </Button>
+
+              <div className="grid grid-cols-2 gap-2">
+                {USE_CASE_TABS.map((tab) => (
+                  <Button
+                    key={tab.key}
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveUseCase(tab.key)}
+                    className={`h-9 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                      activeUseCase === tab.key
+                        ? 'border-blue-500 text-blue-700 bg-blue-50'
+                        : 'border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </div>
+
+              {scenarioRecommendations.length > 0 && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-blue-600">Scenario Recommendations</div>
+                  {scenarioRecommendations.map((scenario) => {
+                    const preferredId = Number(scenario.preferred_worker_id);
+                    return (
+                      <button
+                        key={`${scenario.use_case}-${scenario.preferred_worker_id}`}
+                        type="button"
+                        className="w-full text-left bg-white rounded-lg border border-blue-100 p-2 hover:border-blue-300"
+                        onClick={() => {
+                          const scenarioKey = scenario.use_case as UseCaseFilter;
+                          if (USE_CASE_TABS.some((tab) => tab.key === scenarioKey)) {
+                            setActiveUseCase(scenarioKey);
+                          }
+                          setFocusedWorkerId(preferredId);
+                          workerCardRefs.current[preferredId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                      >
+                        <div className="text-[10px] font-black uppercase tracking-widest text-blue-700">{scenario.use_case}</div>
+                        <div className="text-xs font-bold text-slate-700 mt-1">Worker #{scenario.preferred_worker_id}</div>
+                        <div className="text-xs text-slate-600 mt-1">{scenario.why}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-              {displayMatches.length > 0 ? displayMatches.map((workerOrId: any) => {
-                const isMatchObject = typeof workerOrId === 'object';
-                const workerId = isMatchObject ? workerOrId.worker_id : workerOrId;
-                const workerInfo = isMatchObject ? workerOrId : workers.find(w => w.id === workerId);
-                
+              {filteredMatches.length > 0 ? filteredMatches.map((workerInfo) => {
+                const workerId = workerInfo.worker_id;
+
                 return (
-                  <div key={workerId} className={`border rounded-2xl p-6 flex flex-col justify-between transition-all hover:shadow-md ${
+                  <div
+                    key={workerId}
+                    ref={(el) => {
+                      workerCardRefs.current[workerId] = el;
+                    }}
+                    className={`border rounded-2xl p-6 flex flex-col justify-between transition-all hover:shadow-md ${
                     task.selected_worker_id === workerId 
                       ? 'border-amber-300 bg-amber-50/50 shadow-sm relative' 
+                      : focusedWorkerId === workerId
+                        ? 'border-blue-300 bg-blue-50/40 shadow-sm relative'
                       : 'border-slate-100 bg-slate-50 hover:border-blue-200'
-                  }`}>
+                  }`}
+                  >
                     {task.selected_worker_id === workerId && (
                       <div className="absolute -top-3 -right-3 bg-amber-500 text-white rounded-full p-1.5 shadow-md">
                         <CheckCircle2 className="w-4 h-4" />
@@ -506,23 +622,75 @@ export default function TaskDetails() {
                     <div className="mb-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <div className="font-black text-lg text-navy-900">{workerInfo?.name || `Worker #${workerId}`}</div>
+                          <div className="font-black text-lg text-navy-900">{workerInfo.name || `Worker #${workerId}`}</div>
                           <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                            {isMatchObject && workerInfo.distance_km ? `${workerInfo.distance_km}km away` : workerInfo?.primary_location || 'Unknown Location'}
+                            {workerInfo.distance_km ? `${workerInfo.distance_km}km away` : workerInfo.primary_location}
                           </div>
                         </div>
-                        {isMatchObject && workerInfo.match_score && (
+                        {workerInfo.match_score > 0 && (
                           <Badge className="bg-emerald-100 text-emerald-800 border-none font-black px-3 py-1">
                             {Math.round(workerInfo.match_score)}% Match
                           </Badge>
                         )}
                       </div>
-                      {isMatchObject && workerInfo.recommendation_reason && (
-                        <p className="text-sm text-slate-600 mt-4 leading-relaxed font-medium bg-white p-3 rounded-xl border border-slate-100">
-                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-500 block mb-1">AI Reason</span>
-                          {workerInfo.recommendation_reason}
-                        </p>
-                      )}
+
+                      <p className="text-sm text-slate-600 mt-4 leading-relaxed font-medium bg-white p-3 rounded-xl border border-slate-100">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-blue-500 block mb-1">Recommendation</span>
+                        {workerInfo.recommendation_reason}
+                      </p>
+
+                      <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-100">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-amber-700 block mb-1">Skill vs Trust Tradeoff</span>
+                        <p className="text-sm text-amber-900 font-medium">{workerInfo.tradeoff_note}</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {workerInfo.use_case_tags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-[10px] uppercase tracking-widest font-black border-blue-200 text-blue-700 bg-blue-50">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {workerInfo.confidence !== null && (
+                          <Badge className="bg-slate-900 text-white border-none text-[10px] uppercase tracking-widest font-black">
+                            Confidence {Math.round(workerInfo.confidence)}
+                          </Badge>
+                        )}
+                        {workerInfo.metadataSparse && (
+                          <Badge className="bg-amber-100 text-amber-800 border-none text-[10px] uppercase tracking-widest font-black">
+                            Sparse AI Metadata
+                          </Badge>
+                        )}
+                      </div>
+
+                      <details className="mt-3 bg-white border border-slate-100 rounded-xl p-3">
+                        <summary className="cursor-pointer text-[10px] uppercase tracking-widest font-black text-slate-500">Strengths & Risks</summary>
+                        <div className="mt-2 grid grid-cols-1 gap-3">
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Strengths</div>
+                            {workerInfo.strengths.length > 0 ? (
+                              <ul className="list-disc pl-4 text-xs text-slate-700 space-y-1">
+                                {workerInfo.strengths.map((item, idx) => (
+                                  <li key={`${workerId}-s-${idx}`}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="text-xs text-slate-500">No strengths provided.</div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-rose-700 mb-1">Risks</div>
+                            {workerInfo.risks.length > 0 ? (
+                              <ul className="list-disc pl-4 text-xs text-slate-700 space-y-1">
+                                {workerInfo.risks.map((item, idx) => (
+                                  <li key={`${workerId}-r-${idx}`}>{item}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="text-xs text-slate-500">No risks provided.</div>
+                            )}
+                          </div>
+                        </div>
+                      </details>
                     </div>
                     <Button 
                       onClick={() => confirmMutation.mutate({ taskId: Number(id), workerId: workerId })}
@@ -538,7 +706,7 @@ export default function TaskDetails() {
                     </Button>
                     <Button 
                       onClick={() => {
-                        setMessageWorker({ id: workerId, name: workerInfo?.name || `Worker #${workerId}`, avatar_url: workerInfo?.avatar_url });
+                        setMessageWorker({ id: workerId, name: workerInfo.name || `Worker #${workerId}`, avatar_url: workerInfo.avatar_url });
                         setShowMessageModal(true);
                       }}
                       variant="outline"
@@ -549,7 +717,7 @@ export default function TaskDetails() {
                   </div>
                 );
               }) : (
-                <div className="text-center py-10 text-slate-400 font-medium">No matches found.</div>
+                <div className="text-center py-10 text-slate-400 font-medium">No matches found for this use-case.</div>
               )}
             </div>
           </div>

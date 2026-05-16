@@ -8,7 +8,7 @@ export function useWorkerProfile(options?: { enabled?: boolean; retry?: boolean 
     queryKey: ['worker', 'profile'],
     queryFn: workerProfileApi.getProfile,
     ...options,
-  });
+  } as Parameters<typeof useQuery>[0]);
 }
 
 export function useCreateWorkerProfile() {
@@ -22,8 +22,8 @@ export function useCreateWorkerProfile() {
 export function useUpdateWorkerProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => workerProfileApi.updateProfile(data),
-    onSuccess: (data: any) => {
+    mutationFn: (data: Partial<import('../types').Worker>) => workerProfileApi.updateProfile(data),
+    onSuccess: (data: import('../types').Worker) => {
       queryClient.invalidateQueries({ queryKey: ['worker', 'profile'] });
       queryClient.setQueryData(['worker', 'profile'], data);
     },
