@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-<<<<<<< HEAD
-import { useQueryClient} from '@tanstack/react-query';
-=======
 import { Link } from 'react-router-dom';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
->>>>>>> c77445b (commits)
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
@@ -150,7 +146,7 @@ export default function Profile() {
                <Link to="/profile/trust-score">
                  <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 uppercase tracking-widest text-[10px] cursor-pointer shadow-sm hover:shadow-md transition-all">
                    <ShieldCheck className="w-3 h-3 mr-1" />
-                   Trust Rating: {workerProfile?.trust_score ?? user?.trust_score ?? 750}
+                   Trust Rating: {workerProfile?.trustgit _score ?? user?.trust_score ?? 750}
                  </Badge>
                </Link>
              </div>

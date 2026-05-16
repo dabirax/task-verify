@@ -4,11 +4,11 @@ import type { Worker, KYCData, LoanApplication, InsuranceApplication } from '../
 
 // ── Profile ──────────────────────────────────────────────────────────────────
 export function useWorkerProfile(options?: { enabled?: boolean; retry?: boolean | number | ((failureCount: number, error: any) => boolean) }) {
-  return useQuery({
+  return useQuery<Worker>({
     queryKey: ['worker', 'profile'],
     queryFn: workerProfileApi.getProfile,
     ...options,
-  } as Parameters<typeof useQuery>[0]);
+  });
 }
 
 export function useCreateWorkerProfile() {
