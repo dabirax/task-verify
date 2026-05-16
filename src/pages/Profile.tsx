@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient} from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../context/AppContext';
@@ -11,7 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { getInitials, trustScoreLabel, getSkillColor } from '../utils/formatters';
+import { getInitials, getSkillColor } from '../utils/formatters';
 import { ShieldCheck, User as UserIcon, Mail, MapPin, Edit2, Loader2, Save, X } from 'lucide-react';
 
 export default function Profile() {

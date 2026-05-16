@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import type { Task, EscrowAccount, Dispute, DisputeWindow } from '../types';
+import type { Task, EscrowAccount, Dispute, DisputeWindow, CreateTaskPayload, WorkerMatch } from '../types';
 
 export const buyerApi = {
   getMyTasks: () =>
@@ -8,16 +8,10 @@ export const buyerApi = {
   getTaskDetail: (id: number) =>
     apiClient<Task>(`/api/v1/buyer/tasks/${id}`),
 
-  createTask: (data: any) =>
-    apiClient<{ task: Task; matches: any[] }>('/api/v1/buyer/tasks', {
+  createTask: (data: CreateTaskPayload) =>
+    apiClient<{ task: Task; matches: WorkerMatch[] }>('/api/v1/buyer/tasks', {
       method: 'POST',
       body: data,
-    }),
-
-  createTaskMultipart: (formData: FormData) =>
-    apiClient<{ task: Task; matches: any[] }>('/api/v1/buyer/tasks', {
-      method: 'POST',
-      body: formData,
     }),
 
   assignWorker: (id: number, worker_id: number) =>

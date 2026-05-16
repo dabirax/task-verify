@@ -38,18 +38,7 @@ export function useDisputeWindow(id: number, options?: { enabled?: boolean }) {
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateTaskPayload) => api.createTask(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-}
-
-export function useCreateTaskMultipart() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (formData: FormData) => buyerApi.createTaskMultipart(formData),
+    mutationFn: (data: CreateTaskPayload) => buyerApi.createTask(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -86,7 +75,8 @@ export function useRecommendWorkers() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => api.recommendWorkers(id),
-    onSuccess: (_, id) => {
+    onSuccess: (data, id) => {
+      queryClient.setQueryData(['tasks', id], data.task);
       queryClient.invalidateQueries({ queryKey: ['buyer', 'tasks', id] });
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
     },
