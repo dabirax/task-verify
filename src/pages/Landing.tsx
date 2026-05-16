@@ -36,9 +36,8 @@ import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
 import { Progress } from '../components/ui/progress'
-import { useTasks } from '../hooks/useTasks'
-import { useWorkers } from '../hooks/useWorkers'
 import { formatNaira, formatRating, getInitials } from '../utils/formatters'
+import type { Task, Worker } from '../types'
 import TaskCard from '../components/TaskCard'
 import WorkerCard from '../components/WorkerCard'
 
@@ -69,8 +68,141 @@ const nodes = [
 ]
 
 export default function Landing() {
-  const { tasks: services } = useTasks()
-  const { workers } = useWorkers()
+  // Static mock data for Landing page (No backend dependency)
+  const services: Task[] = [
+    {
+      id: 1,
+      task_uuid: 'mock-uuid-1',
+      title: 'Deep Office Cleaning',
+      description: 'Full sanitization and deep cleaning for 4-room office suite in Ikeja.',
+      amount_naira: 45000,
+      task_location: 'Ikeja, Lagos',
+      location_latitude: 6.6018,
+      location_longitude: 3.3515,
+      status: 'open',
+      required_skills: ['Cleaning', 'Sanitization'],
+      due_date: new Date(Date.now() + 86400000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      task_uuid: 'mock-uuid-2',
+      title: 'Last-Mile Delivery Partner',
+      description: 'Reliable bike delivery for e-commerce packages within Lekki Phase 1.',
+      amount_naira: 15000,
+      task_location: 'Lekki, Lagos',
+      location_latitude: 6.4281,
+      location_longitude: 3.4411,
+      status: 'open',
+      required_skills: ['Delivery', 'Logistics'],
+      due_date: new Date(Date.now() + 172800000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      task_uuid: 'mock-uuid-3',
+      title: 'Graphic Design - Logo',
+      description: 'Modern, minimalist logo design for a new fintech startup.',
+      amount_naira: 35000,
+      task_location: 'Remote',
+      location_latitude: 6.5244,
+      location_longitude: 3.3792,
+      status: 'open',
+      required_skills: ['Graphic Design', 'Branding'],
+      due_date: new Date(Date.now() + 259200000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ];
+
+  const workers: Worker[] = [
+    {
+      id: 1,
+      name: 'Amaka Okafor',
+      email: 'amaka@example.com',
+      bio: 'Professional cleaner with 5+ years experience. Specialized in industrial sanitization.',
+      avatar_url: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop',
+      trust_score: 920,
+      avg_rating: 4.9,
+      tasks_completed: 124,
+      tasks_successful: 120,
+      on_time_rate: 0.98,
+      total_earnings: 450000,
+      current_month_earnings: 85000,
+      is_active: true,
+      skills: ['Cleaning', 'Organization'],
+      primary_location: 'Lagos',
+      latitude: 6.5244,
+      longitude: 3.3792,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      name: 'Emeka Nwosu',
+      email: 'emeka@example.com',
+      bio: 'Certified electrician and handyman. Rapid response and high quality work guaranteed.',
+      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+      trust_score: 880,
+      avg_rating: 4.8,
+      tasks_completed: 89,
+      tasks_successful: 85,
+      on_time_rate: 0.95,
+      total_earnings: 320000,
+      current_month_earnings: 45000,
+      is_active: true,
+      skills: ['Electrical', 'Repairs'],
+      primary_location: 'Abuja',
+      latitude: 9.0579,
+      longitude: 7.4951,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      name: 'Chioma Adeyemi',
+      email: 'chioma@example.com',
+      bio: 'Digital marketer and content creator. Helping SMEs grow their online presence.',
+      avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
+      trust_score: 950,
+      avg_rating: 5.0,
+      tasks_completed: 56,
+      tasks_successful: 56,
+      on_time_rate: 1.0,
+      total_earnings: 280000,
+      current_month_earnings: 95000,
+      is_active: true,
+      skills: ['Marketing', 'Social Media'],
+      primary_location: 'Ibadan',
+      latitude: 7.3775,
+      longitude: 3.947,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 4,
+      name: 'Tunde Bakare',
+      email: 'tunde@example.com',
+      bio: 'Logistics expert with own fleet of delivery bikes. Fast and reliable service.',
+      avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
+      trust_score: 840,
+      avg_rating: 4.7,
+      tasks_completed: 210,
+      tasks_successful: 205,
+      on_time_rate: 0.97,
+      total_earnings: 1200000,
+      current_month_earnings: 150000,
+      is_active: true,
+      skills: ['Logistics', 'Delivery'],
+      primary_location: 'Kano',
+      latitude: 12.0022,
+      longitude: 8.592,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ];
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
